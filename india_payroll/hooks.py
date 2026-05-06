@@ -86,7 +86,8 @@ app_license = "gpl-3.0"
 # ------------
 
 # before_install = "india_payroll.install.before_install"
-# after_install = "india_payroll.install.after_install"
+after_install = "india_payroll.install.after_install"
+after_migrate = "india_payroll.install.after_migrate"
 
 # Uninstallation
 # ------------
@@ -180,6 +181,22 @@ app_license = "gpl-3.0"
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "india_payroll.event.get_events"
 # }
+
+# Payroll Hooks
+# -------------
+# Called during salary slip creation to apply additional deductions (e.g. professional tax)
+# override_doctype_class = {
+# 	"Salary Slip": "india_payroll.india_payroll.professional_tax.ProfessionalTaxMixin"
+# }
+
+doc_events = {
+	"Salary Slip": {
+		"before_save": "india_payroll.india_payroll.professional_tax.apply_professional_tax",
+	},
+	"Salary Structure Assignment": {
+		"validate": "india_payroll.india_payroll.professional_tax.validate_employment_state",
+	},
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
