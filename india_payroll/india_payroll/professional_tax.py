@@ -256,13 +256,12 @@ def validate_employment_state(doc, method=None) -> None:
 		return
 
 	if not doc.employment_state:
-		frappe.msgprint(
+		frappe.throw(
 			frappe._(
 				"Employment State is not set on this Salary Structure Assignment. "
 				"Professional Tax will not be deducted for {0} until an Employment State is selected."
 			).format(frappe.bold(doc.employee_name or doc.employee)),
-			title=frappe._("Missing Employment State"),
-			indicator="orange",
+			title=frappe._("Missing Employment State")
 		)
 
 
