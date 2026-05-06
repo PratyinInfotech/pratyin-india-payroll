@@ -2,16 +2,13 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe
-
 from erpnext.setup.doctype.employee.test_employee import make_employee
-
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
 from hrms.payroll.doctype.salary_structure.test_salary_structure import (
 	create_salary_structure_assignment,
 	make_salary_structure,
 )
 from hrms.tests.utils import HRMSTestSuite
-
 from india_payroll.install import create_professional_tax_component
 
 

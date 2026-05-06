@@ -1,7 +1,9 @@
 app_name = "india_payroll"
 app_title = "India Payroll"
 app_publisher = "Frappe Technologies Pvt. Ltd."
-app_description = "A Frappe HR extenstion app to simplify payroll and taxes according to indian rules and regulations"
+app_description = (
+	"A Frappe HR extenstion app to simplify payroll and taxes according to indian rules and regulations"
+)
 app_email = "contact@frappe.io"
 app_license = "gpl-3.0"
 

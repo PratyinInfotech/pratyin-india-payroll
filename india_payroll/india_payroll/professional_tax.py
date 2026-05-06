@@ -192,11 +192,6 @@ STATE_PT_CONFIG = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Main hook
-# ---------------------------------------------------------------------------
-
-
 def apply_professional_tax(doc, method=None) -> None:
 	"""
 	Salary Slip — before_save hook.
@@ -239,9 +234,6 @@ def apply_professional_tax(doc, method=None) -> None:
 	_update_pt_in_salary_slip(doc, pt_amount)
 
 
-# ---------------------------------------------------------------------------
-# Salary Structure Assignment validation
-# ---------------------------------------------------------------------------
 
 
 def validate_employment_state(doc, method=None) -> None:
@@ -261,13 +253,10 @@ def validate_employment_state(doc, method=None) -> None:
 				"Employment State is not set on this Salary Structure Assignment. "
 				"Professional Tax will not be deducted for {0} until an Employment State is selected."
 			).format(frappe.bold(doc.employee_name or doc.employee)),
-			title=frappe._("Missing Employment State")
+			title=frappe._("Missing Employment State"),
 		)
 
 
-# ---------------------------------------------------------------------------
-# Employment state lookup
-# ---------------------------------------------------------------------------
 
 
 def _get_employment_state(doc) -> str | None:
@@ -279,7 +268,7 @@ def _get_employment_state(doc) -> str | None:
 	return frappe.db.get_value(
 		"Salary Structure Assignment",
 		filters={
-			"employee": doc.employee, 
+			"employee": doc.employee,
 			"company": doc.company,
 			"from_date": ("<=", doc.start_date),
 			"salary_structure": doc.salary_structure,
@@ -288,9 +277,6 @@ def _get_employment_state(doc) -> str | None:
 	)
 
 
-# ---------------------------------------------------------------------------
-# Monthly PT computation
-# ---------------------------------------------------------------------------
 
 
 def _compute_pt_monthly(gross_pay: float, state_config: dict, month: int, gender: str) -> float:
@@ -319,9 +305,6 @@ def _compute_pt_monthly(gross_pay: float, state_config: dict, month: int, gender
 	return flt(pt_amount)
 
 
-# ---------------------------------------------------------------------------
-# Half-yearly PT computation  (Tamil Nadu, Kerala)
-# ---------------------------------------------------------------------------
 
 
 def _compute_pt_half_yearly(doc, state_config: dict) -> float:
@@ -423,9 +406,6 @@ def _cumulative_pt_deducted(
 	return flt(result[0][0]) if result and result[0][0] else 0.0
 
 
-# ---------------------------------------------------------------------------
-# Salary slip mutation
-# ---------------------------------------------------------------------------
 
 
 def _update_pt_in_salary_slip(doc, pt_amount: float) -> None:
