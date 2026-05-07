@@ -105,7 +105,7 @@ class TestProfessionalTax(HRMSTestSuite):
 	def test_kerala_half_yearly_first_month_of_period(self):
 		"""
 		Kerala is half-yearly. For the first month of a half-year period
-		(April–September) with no prior submitted slips, the full half-yearly
+		(April-September) with no prior submitted slips, the full half-yearly
 		PT slab amount is charged in one go.
 
 		Default salary structure: Basic ₹50,000 + HRA ₹3,000 + SA ₹25,000
