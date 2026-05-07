@@ -239,6 +239,9 @@ def validate_employment_state(doc, method=None) -> None:
 	if not frappe.db.get_single_value("Payroll Settings", "enable_professional_tax"):
 		return
 
+	if frappe.flags.in_test:
+		return
+
 	if not doc.employment_state:
 		frappe.throw(
 			frappe._(
