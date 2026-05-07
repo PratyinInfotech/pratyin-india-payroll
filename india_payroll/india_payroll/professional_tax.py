@@ -4,6 +4,8 @@ import frappe
 from frappe.query_builder.functions import Sum
 from frappe.utils import flt, getdate
 
+
+
 PT_SALARY_COMPONENT = "Professional Tax"
 
 # ---------------------------------------------------------------------------

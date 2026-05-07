@@ -39,9 +39,7 @@ def execute():
 
 		if company not in company_state:
 			address_name = _get_primary_company_address(company)
-			state = (
-				frappe.db.get_value("Address", address_name, "state") if address_name else None
-			)
+			state = frappe.db.get_value("Address", address_name, "state") if address_name else None
 			company_state[company] = state or ""
 
 		state = company_state[company]

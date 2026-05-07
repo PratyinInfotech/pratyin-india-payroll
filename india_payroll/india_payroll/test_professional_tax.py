@@ -9,6 +9,7 @@ from hrms.payroll.doctype.salary_structure.test_salary_structure import (
 	make_salary_structure,
 )
 from hrms.tests.utils import HRMSTestSuite
+
 from india_payroll.install import create_professional_tax_component
 
 
