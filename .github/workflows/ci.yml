@@ -4,7 +4,29 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - "**.css"
+      - "**.js"
+      - "**.md"
+      - "**.html"
+      - "**.csv"
+      - "**.po"
+      - "**.pot"
   pull_request:
+    paths-ignore:
+      - "**.css"
+      - "**.js"
+      - "**.md"
+      - "**.html"
+      - "**.csv"
+      - "**.po"
+      - "**.pot"
+  schedule:
+    # Run every day at midnight UTC / 5:30 IST
+    - cron: "0 0 * * *"
+
+env:
+  INDIA_PAYROLL_BRANCH: ${{ github.base_ref || github.ref_name }}
 
 concurrency:
   group: develop-india_payroll-${{ github.event.number }}
@@ -13,23 +35,14 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
+    timeout-minutes: 60
     name: Server
 
     services:
-      redis-cache:
-        image: redis:alpine
-        ports:
-          - 13000:6379
-      redis-queue:
-        image: redis:alpine
-        ports:
-          - 11000:6379
-      mariadb:
+      mysql:
         image: mariadb:11.8
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MARIADB_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=3
@@ -54,6 +67,9 @@ jobs:
           node-version: 24
           check-latest: true
 
+      - name: Add to Hosts
+        run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -65,7 +81,7 @@ jobs:
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: 'echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT'
+        run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - uses: actions/cache@v4
         id: yarn-cache
@@ -75,26 +91,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Install MariaDB Client
-        run: |
-          sudo apt update
-          sudo apt-get install mariadb-client
-
-      - name: Setup
-        run: |
-          pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --python "$(which python)" ~/frappe-bench
-
       - name: Install
-        working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app india_payroll $GITHUB_WORKSPACE
-          bench setup requirements --dev
-          bench new-site --db-root-password root --admin-password admin test_site
-          bench --site test_site install-app india_payroll
-          bench build
+          bash ${GITHUB_WORKSPACE}/.github/helper/install.sh
         env:
-          CI: 'Yes'
+          BRANCH_TO_CLONE: ${{ env.INDIA_PAYROLL_BRANCH }}
 
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
