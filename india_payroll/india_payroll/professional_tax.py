@@ -92,7 +92,7 @@ STATE_PT_CONFIG = {
 		"special_rules": {
 			# ₹300 replaces ₹200 for the highest slab in February so that
 			# the annual total reaches the ₹2,500 constitutional cap:
-			#   11 months × ₹200 + February × ₹300 = ₹2,500
+			# 11 months * ₹200 + February * ₹300 = ₹2,500
 			"february_amount": 300,
 			# Women earning up to this monthly gross are fully exempt
 			"women_exemption_upto": 10000,
@@ -159,12 +159,6 @@ STATE_PT_CONFIG = {
 			{"upto": None, "amount": 200},
 		],
 	},
-	# ------------------------------------------------------------------
-	# Half-yearly states  (April–September and October–March)
-	# Slabs are applied against the *cumulative* gross pay for the period.
-	# Each month's PT = total PT due for the period so far
-	#                   minus PT already deducted in earlier months.
-	# ------------------------------------------------------------------
 	"Tamil Nadu": {
 		"frequency": "half-yearly",
 		"slabs": [
@@ -234,8 +228,6 @@ def apply_professional_tax(doc, method=None) -> None:
 	_update_pt_in_salary_slip(doc, pt_amount)
 
 
-
-
 def validate_employment_state(doc, method=None) -> None:
 	"""
 	Salary Structure Assignment — validate hook.
@@ -257,10 +249,7 @@ def validate_employment_state(doc, method=None) -> None:
 		)
 
 
-
-
 def _get_employment_state(doc) -> str | None:
-
 	"""
 	Return the employment_state from the given Salary Structure Assignment.
 	"""
@@ -275,8 +264,6 @@ def _get_employment_state(doc) -> str | None:
 		},
 		fieldname="employment_state",
 	)
-
-
 
 
 def _compute_pt_monthly(gross_pay: float, state_config: dict, month: int, gender: str) -> float:
@@ -305,15 +292,13 @@ def _compute_pt_monthly(gross_pay: float, state_config: dict, month: int, gender
 	return flt(pt_amount)
 
 
-
-
 def _compute_pt_half_yearly(doc, state_config: dict) -> float:
 	"""
 	Return the Professional Tax to deduct in this salary slip for a
 	half-yearly-frequency state.
 
 	Strategy (incremental deduction):
-	  1. Determine the April–September or October–March period containing
+	  1. Determine the April-September or October-March period containing
 		 the salary slip.
 	  2. Sum gross_pay from all *submitted* slips in that period (excluding
 		 the current slip, which may not be submitted yet).
@@ -334,20 +319,13 @@ def _compute_pt_half_yearly(doc, state_config: dict) -> float:
 
 
 def _half_year_period(date: datetime.date) -> tuple[datetime.date, datetime.date]:
-	"""
-	Return (start, end) of the half-year period that contains `date`.
-
-	Indian payroll uses:
-	  • April 1 – September 30  (first half)
-	  • October 1 – March 31   (second half, spans two calendar years)
-	"""
 	year, month = date.year, date.month
 
 	if 4 <= month <= 9:
 		return datetime.date(year, 4, 1), datetime.date(year, 9, 30)
 	elif month >= 10:
 		return datetime.date(year, 10, 1), datetime.date(year + 1, 3, 31)
-	else:  # January – March
+	else:
 		return datetime.date(year - 1, 10, 1), datetime.date(year, 3, 31)
 
 
@@ -406,8 +384,6 @@ def _cumulative_pt_deducted(
 	return flt(result[0][0]) if result and result[0][0] else 0.0
 
 
-
-
 def _update_pt_in_salary_slip(doc, pt_amount: float) -> None:
 	"""
 	Remove any existing Professional Tax deduction row and add a fresh one
@@ -433,11 +409,6 @@ def _update_pt_in_salary_slip(doc, pt_amount: float) -> None:
 		doc.rounded_total = round(doc.net_pay)
 
 
-# ---------------------------------------------------------------------------
-# Slab helpers
-# ---------------------------------------------------------------------------
-
-
 def _slab_amount(salary: float, slabs: list[dict]) -> float:
 	"""
 	Return the PT amount for `salary` by scanning slabs in order.
@@ -457,4 +428,3 @@ def _is_highest_slab(salary: float, slabs: list[dict]) -> bool:
 	"""
 	bounded = [s for s in slabs if s["upto"] is not None]
 	return bool(bounded) and flt(salary) > bounded[-1]["upto"]
-
