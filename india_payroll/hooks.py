@@ -2,7 +2,7 @@ app_name = "india_payroll"
 app_title = "India Payroll"
 app_publisher = "Frappe Technologies Pvt. Ltd."
 app_description = (
-	"A Frappe HR extenstion app to simplify payroll and taxes according to indian rules and regulations"
+	"A Frappe HR extension app to simplify payroll and taxes according to Indian rules and regulations"
 )
 app_email = "contact@frappe.io"
 app_license = "gpl-3.0"
@@ -10,7 +10,7 @@ app_license = "gpl-3.0"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["frappe/hrms"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
