@@ -1,14 +1,16 @@
 app_name = "india_payroll"
 app_title = "India Payroll"
 app_publisher = "Frappe Technologies Pvt. Ltd."
-app_description = "A Frappe HR extenstion app to simplify payroll and taxes according to indian rules and regulations"
+app_description = (
+	"A Frappe HR extension app to simplify payroll and taxes according to Indian rules and regulations"
+)
 app_email = "contact@frappe.io"
 app_license = "gpl-3.0"
 
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["frappe/hrms"]
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -86,7 +88,8 @@ app_license = "gpl-3.0"
 # ------------
 
 # before_install = "india_payroll.install.before_install"
-# after_install = "india_payroll.install.after_install"
+after_install = "india_payroll.install.after_install"
+after_migrate = "india_payroll.install.after_migrate"
 
 # Uninstallation
 # ------------
@@ -180,6 +183,22 @@ app_license = "gpl-3.0"
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "india_payroll.event.get_events"
 # }
+
+# Payroll Hooks
+# -------------
+# Called during salary slip creation to apply additional deductions (e.g. professional tax)
+# override_doctype_class = {
+# 	"Salary Slip": "india_payroll.india_payroll.professional_tax.ProfessionalTaxMixin"
+# }
+
+doc_events = {
+	"Salary Slip": {
+		"before_save": "india_payroll.india_payroll.professional_tax.apply_professional_tax",
+	},
+	"Salary Structure Assignment": {
+		"validate": "india_payroll.india_payroll.professional_tax.validate_employment_state",
+	},
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
@@ -252,4 +271,3 @@ require_type_annotated_api_methods = True
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
