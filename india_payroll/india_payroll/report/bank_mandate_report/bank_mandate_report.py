@@ -16,7 +16,6 @@ def execute(filters=None):
 
 def get_columns():
 	return [
-		{"label": _("Sr"), "fieldname": "sr", "fieldtype": "Int", "width": 50},
 		{
 			"label": _("Employee"),
 			"fieldname": "employee",
@@ -121,8 +120,7 @@ def get_data(filters):
 	if filters.get("company"):
 		currency = frappe.get_cached_value("Company", filters["company"], "default_currency") or ""
 
-	for i, row in enumerate(rows):
-		row["sr"] = i + 1
+	for row in rows:
 		row["net_pay"] = flt(row.get("net_pay"), 2)
 		row["currency"] = currency
 
