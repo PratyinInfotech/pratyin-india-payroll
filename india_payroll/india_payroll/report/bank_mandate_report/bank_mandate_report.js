@@ -36,11 +36,5 @@ frappe.query_reports["Bank Mandate Report"] = {
 				};
 			},
 		},
-		{
-			fieldname: "salary_mode",
-			label: __("Payment Mode"),
-			fieldtype: "Select",
-			options: "\nBank\nCash\nCheque",
-		},
 	],
 };

@@ -42,7 +42,8 @@ def get_columns():
 		{"label": _("Account Number"), "fieldname": "bank_ac_no", "fieldtype": "Data", "width": 160},
 		{"label": _("IFSC Code"), "fieldname": "ifsc_code", "fieldtype": "Data", "width": 120},
 		{"label": _("MICR Code"), "fieldname": "micr_code", "fieldtype": "Data", "width": 120},
-		{"label": _("Payment Mode"), "fieldname": "salary_mode", "fieldtype": "Data", "width": 120},
+		{"label": _("Account Type"), "fieldname": "account_type", "fieldtype": "Data", "width": 120},
+		{"label": _("Payment Mode"), "fieldname": "payment_mode", "fieldtype": "Data", "width": 120},
 		{
 			"label": _("Net Pay"),
 			"fieldname": "net_pay",
@@ -69,7 +70,6 @@ def get_data(filters):
 			Emp.designation,
 			Emp.bank_name,
 			Emp.bank_ac_no,
-			Emp.salary_mode,
 			SS.net_pay,
 		)
 		.where(SS.docstatus == 1)
@@ -87,22 +87,25 @@ def get_data(filters):
 	if filters.get("department"):
 		query = query.where(Emp.department == filters["department"])
 
-	if filters.get("salary_mode"):
-		query = query.where(Emp.salary_mode == filters["salary_mode"])
-
 	rows = query.orderby(Emp.department).orderby(SS.employee_name).run(as_dict=True)
 
-	# Fetch IFSC and MICR codes (added as custom fields by india_payroll)
+	# Fetch custom fields added by india_payroll (ifsc_code, micr_code, payment_mode, account_type)
 	has_ifsc = frappe.db.has_column("Employee", "ifsc_code")
 	has_micr = frappe.db.has_column("Employee", "micr_code")
+	has_payment_mode = frappe.db.has_column("Employee", "payment_mode")
+	has_account_type = frappe.db.has_column("Employee", "account_type")
 
-	if rows and (has_ifsc or has_micr):
+	if rows and (has_ifsc or has_micr or has_payment_mode or has_account_type):
 		emp_names = list({r.employee for r in rows})
 		fields = ["name"]
 		if has_ifsc:
 			fields.append("ifsc_code")
 		if has_micr:
 			fields.append("micr_code")
+		if has_payment_mode:
+			fields.append("payment_mode")
+		if has_account_type:
+			fields.append("account_type")
 
 		emp_details = frappe.get_all("Employee", filters={"name": ["in", emp_names]}, fields=fields)
 		emp_map = {e.name: e for e in emp_details}
@@ -111,10 +114,14 @@ def get_data(filters):
 			emp = emp_map.get(row.employee, frappe._dict())
 			row["ifsc_code"] = emp.get("ifsc_code") or ""
 			row["micr_code"] = emp.get("micr_code") or ""
+			row["payment_mode"] = emp.get("payment_mode") or ""
+			row["account_type"] = emp.get("account_type") or ""
 	else:
 		for row in rows:
 			row["ifsc_code"] = ""
 			row["micr_code"] = ""
+			row["payment_mode"] = ""
+			row["account_type"] = ""
 
 	currency = ""
 	if filters.get("company"):

@@ -87,6 +87,24 @@ def get_custom_fields():
 				"depends_on": 'eval:doc.salary_mode == "Bank"',
 				"translatable": 0,
 			},
+			{
+				"fieldname": "payment_mode",
+				"label": "Payment Mode",
+				"fieldtype": "Select",
+				"options": "\nNEFT\nRTGS",
+				"insert_after": "micr_code",
+				"depends_on": 'eval:doc.salary_mode == "Bank"',
+				"translatable": 0,
+			},
+			{
+				"fieldname": "account_type",
+				"label": "Account Type",
+				"fieldtype": "Select",
+				"options": "\nSavings\nCurrent\nSalary",
+				"insert_after": "payment_mode",
+				"depends_on": 'eval:doc.salary_mode == "Bank"',
+				"translatable": 0,
+			},
 		],
 		"Salary Structure Assignment": [
 			{
