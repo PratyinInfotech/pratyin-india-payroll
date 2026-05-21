@@ -63,6 +63,31 @@ def get_custom_fields():
 				"insert_after": "india_payroll_professional_tax_section",
 			},
 		],
+		"Employee": [
+			{
+				"fieldname": "india_payroll_bank_cb",
+				"fieldtype": "Column Break",
+				"insert_after": "bank_ac_no",
+			},
+			{
+				"fieldname": "ifsc_code",
+				"label": "IFSC Code",
+				"fieldtype": "Data",
+				"insert_after": "india_payroll_bank_cb",
+				"print_hide": 1,
+				"depends_on": 'eval:doc.salary_mode == "Bank"',
+				"translatable": 0,
+			},
+			{
+				"fieldname": "micr_code",
+				"label": "MICR Code",
+				"fieldtype": "Data",
+				"insert_after": "ifsc_code",
+				"print_hide": 1,
+				"depends_on": 'eval:doc.salary_mode == "Bank"',
+				"translatable": 0,
+			},
+		],
 		"Salary Structure Assignment": [
 			{
 				"fieldname": "employment_state",
