@@ -62,6 +62,26 @@ def get_custom_fields():
 				"fieldtype": "Check",
 				"insert_after": "india_payroll_professional_tax_section",
 			},
+			{
+				"fieldname": "india_payroll_esic_section",
+				"label": "Employee State Insurance",
+				"fieldtype": "Section Break",
+				"insert_after": "enable_professional_tax",
+			},
+			{
+				"fieldname": "enable_esic",
+				"label": "Enable ESIC Deduction",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_esic_section",
+			},
+			{
+				"fieldname": "esic_registration_number",
+				"label": "ESIC Registration Number",
+				"fieldtype": "Data",
+				"insert_after": "enable_esic",
+				"depends_on": "eval:doc.enable_esic",
+				"translatable": 0,
+			},
 		],
 		"Employee": [
 			{
@@ -105,6 +125,19 @@ def get_custom_fields():
 				"depends_on": 'eval:doc.salary_mode == "Bank"',
 				"translatable": 0,
 			},
+			{
+				"fieldname": "india_payroll_esi_section",
+				"label": "Employee State Insurance",
+				"fieldtype": "Section Break",
+				"insert_after": "account_type",
+			},
+			{
+				"fieldname": "is_person_with_disability",
+				"label": "Person with Disability",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_esi_section",
+				"description": "ESIC wage ceiling is \u20b925,000 instead of \u20b921,000 for persons with disability",
+			},
 		],
 		"Salary Structure Assignment": [
 			{
@@ -121,6 +154,7 @@ def get_custom_fields():
 def after_install():
 	create_custom_fields(get_custom_fields())
 	create_professional_tax_component()
+	create_esi_components()
 
 
 def after_migrate():
@@ -144,5 +178,33 @@ def create_professional_tax_component():
 	doc.description = (
 		"State-level professional tax levied on salaried employees "
 		"under Article 276 of the Indian Constitution (max ₹2,500/year)."
+	)
+	doc.insert(ignore_permissions=True)
+
+
+def create_esi_components():
+	"""
+	Create the Employee State Insurance salary component if it does not
+	already exist.
+
+	Only the employee's deduction (0.75 %) is tracked as a salary component.
+	The employer's contribution (3.25 %) is part of the CTC and is not shown
+	as a separate component on the salary slip.
+	"""
+	if frappe.db.exists("Salary Component", "Employee State Insurance"):
+		return
+
+	doc = frappe.new_doc("Salary Component")
+	doc.update(
+		{
+			"salary_component": "Employee State Insurance",
+			"salary_component_abbr": "ESI",
+			"type": "Deduction",
+			"statistical_component": 0,
+			"description": (
+				"Employee's contribution to the Employee State Insurance scheme "
+				"at 0.75% of gross wages (ESI Act, 1948)."
+			),
+		}
 	)
 	doc.insert(ignore_permissions=True)
