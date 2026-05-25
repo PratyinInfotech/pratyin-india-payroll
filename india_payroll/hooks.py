@@ -261,6 +261,12 @@ doc_events = {
 # ]
 
 # Automatically update python controller files with type annotations for this app.
+regional_overrides = {
+	"India": {
+		"hrms.payroll.doctype.income_tax_slab.income_tax_slab.apply_surcharge_with_marginal_relief": "india_payroll.india_payroll.income_tax_utils.apply_surcharge_with_marginal_relief",
+	}
+}
+
 export_python_type_annotations = True
 
 # Require all whitelisted methods to have type annotations
