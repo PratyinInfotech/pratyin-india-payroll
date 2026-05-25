@@ -4,7 +4,6 @@ from hrms.payroll.doctype.income_tax_slab.income_tax_slab import (
 	calculate_base_tax_from_tax_slabs,
 	calculate_other_charges,
 )
-from hrms.payroll.doctype.payroll_period.test_payroll_period import create_payroll_period
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
 from hrms.payroll.doctype.salary_structure.test_salary_structure import make_salary_structure
 from hrms.tests.utils import HRMSTestSuite
@@ -199,9 +198,6 @@ class TestIndiaIncomeTax(HRMSTestSuite):
 
 	def test_salary_slip_tds_includes_surcharge(self):
 		"""TDS on a high-income salary slip (₹7.2 M annual) includes the 10% surcharge."""
-		payroll_period = create_payroll_period(
-			name="_Test Payroll Period India Surcharge", company="_Test Company"
-		)
 		employee = make_employee("test_india_surcharge@salary.slip", company="_Test Company")
 
 		salary_structure = make_salary_structure(
@@ -209,7 +205,6 @@ class TestIndiaIncomeTax(HRMSTestSuite):
 			"Monthly",
 			test_tax=True,
 			employee=employee,
-			payroll_period=payroll_period,
 			company="_Test Company",
 			base=600000,  # ₹7.2 M annual — in 10% surcharge band (₹50 L to ₹1 Cr, new regime)
 		)
