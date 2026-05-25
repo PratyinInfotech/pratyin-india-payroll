@@ -193,7 +193,10 @@ after_migrate = "india_payroll.install.after_migrate"
 
 doc_events = {
 	"Salary Slip": {
-		"before_save": "india_payroll.india_payroll.professional_tax.apply_professional_tax",
+		"before_save": [
+			"india_payroll.india_payroll.professional_tax.apply_professional_tax",
+			"india_payroll.india_payroll.esi.apply_esi",
+		],
 	},
 	"Salary Structure Assignment": {
 		"validate": "india_payroll.india_payroll.professional_tax.validate_employment_state",
