@@ -1,6 +1,8 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+from india_payroll.india_payroll.tax_exemption_setup import setup_tax_exemption_categories
+
 INDIA_STATES = [
 	"Andhra Pradesh",
 	"Arunachal Pradesh",
@@ -279,6 +281,7 @@ def after_install():
 	create_professional_tax_component()
 	create_esi_components()
 	create_income_tax_slabs()
+	setup_tax_exemption_categories()
 
 
 def after_migrate():
