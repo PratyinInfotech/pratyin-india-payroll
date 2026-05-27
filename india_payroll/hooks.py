@@ -196,6 +196,7 @@ doc_events = {
 		"before_save": [
 			"india_payroll.india_payroll.professional_tax.apply_professional_tax",
 			"india_payroll.india_payroll.esi.apply_esi",
+			"india_payroll.india_payroll.lwf.apply_lwf",
 		],
 	},
 	"Salary Structure Assignment": {

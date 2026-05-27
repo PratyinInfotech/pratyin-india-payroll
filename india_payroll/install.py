@@ -187,6 +187,18 @@ def get_custom_fields():
 				"depends_on": "eval:doc.enable_esic",
 				"translatable": 0,
 			},
+			{
+				"fieldname": "india_payroll_lwf_section",
+				"label": "Labour Welfare Fund",
+				"fieldtype": "Section Break",
+				"insert_after": "esic_registration_number",
+			},
+			{
+				"fieldname": "enable_lwf",
+				"label": "Enable LWF Deduction",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_lwf_section",
+			},
 		],
 		"Employee": [
 			{
@@ -251,6 +263,27 @@ def get_custom_fields():
 				"insert_after": "esic_card_no",
 				"description": "ESIC wage ceiling is \u20b925,000 instead of \u20b921,000 for persons with disability",
 			},
+			{
+				"fieldname": "india_payroll_lwf_section",
+				"label": "Labour Welfare Fund",
+				"fieldtype": "Section Break",
+				"insert_after": "is_person_with_disability",
+			},
+			{
+				"fieldname": "lwf_exempted",
+				"label": "LWF Exempted",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_lwf_section",
+				"description": "Manually exempt this employee from Labour Welfare Fund deduction. This setting is preserved across payroll runs.",
+			},
+			{
+				"fieldname": "lwf_exemption_reason",
+				"label": "LWF Exemption Reason",
+				"fieldtype": "Small Text",
+				"insert_after": "lwf_exempted",
+				"depends_on": "eval:doc.lwf_exempted",
+				"translatable": 0,
+			},
 		],
 		"Income Tax Slab": [
 			{
@@ -278,6 +311,7 @@ def after_install():
 	create_custom_fields(get_custom_fields())
 	create_professional_tax_component()
 	create_esi_components()
+	create_lwf_component()
 	create_income_tax_slabs()
 
 
@@ -322,6 +356,33 @@ def create_esi_components():
 			"description": (
 				"Employee's contribution to the Employee State Insurance scheme "
 				"at 0.75% of gross wages (ESI Act, 1948)."
+			),
+		}
+	)
+	doc.insert(ignore_permissions=True)
+
+
+def create_lwf_component():
+	"""
+	Create the Labour Welfare Fund salary component if it does not already exist.
+
+	Only the employee's flat deduction is shown on the salary slip.
+	The employer's contribution is remitted separately and is not deducted
+	from the employee's salary.
+	"""
+	if frappe.db.exists("Salary Component", "Labour Welfare Fund"):
+		return
+
+	doc = frappe.new_doc("Salary Component")
+	doc.update(
+		{
+			"salary_component": "Labour Welfare Fund",
+			"salary_component_abbr": "LWF",
+			"type": "Deduction",
+			"statistical_component": 0,
+			"description": (
+				"Employee's flat contribution to the State Labour Welfare Fund. "
+				"Amount varies by state; deduction frequency is monthly, half-yearly, or annual."
 			),
 		}
 	)
