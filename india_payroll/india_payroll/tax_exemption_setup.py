@@ -66,7 +66,7 @@ EXEMPTION_CATEGORIES = {
 		"description": "Medical treatment and maintenance of a disabled dependent.",
 		"sub_categories": [
 			{"name": "Dependent with 40-79% Disability", "max_amount": 75000},
-			{"name": "Dependent with 80%+ Disability", "max_amount": 125000},
+			{"name": "Dependent with 80%+ Disability"},
 		],
 	},
 	"80DDB": {
@@ -74,10 +74,7 @@ EXEMPTION_CATEGORIES = {
 		"description": "Treatment of specified diseases such as cancer, neurological disorders and kidney failure.",
 		"sub_categories": [
 			{"name": "Specified Disease Treatment - Self or Dependent"},
-			{
-				"name": "Specified Disease Treatment - Senior Citizen",
-				"max_amount": 100000,
-			},
+			{"name": "Specified Disease Treatment - Senior Citizen"},
 		],
 	},
 	"80E": {
@@ -149,7 +146,7 @@ EXEMPTION_CATEGORIES = {
 		"description": "Flat deduction for employees with a certified disability. Amount depends on the severity of disability.",
 		"sub_categories": [
 			{"name": "Self with 40-79% Disability", "max_amount": 75000},
-			{"name": "Self with 80%+ Disability", "max_amount": 125000},
+			{"name": "Self with 80%+ Disability"},
 		],
 	},
 }

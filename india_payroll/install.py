@@ -401,6 +401,14 @@ def get_custom_fields():
 				"options": "\n".join(INDIA_STATES),
 				"insert_after": "employee",
 			},
+			{
+				"fieldname": "annual_gross_earning",
+				"label": "Annual Gross Earning",
+				"fieldtype": "Currency",
+				"insert_after": "cost_to_company",
+				"read_only": 1,
+				"description": "Auto-computed from salary structure earning components on submit.",
+			},
 		],
 		"Salary Component": [
 			{

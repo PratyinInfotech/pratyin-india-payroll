@@ -135,13 +135,11 @@ after_migrate = "india_payroll.install.after_migrate"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Salary Structure Assignment": {
+		"on_submit": "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.evaluate_annual_gross",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
