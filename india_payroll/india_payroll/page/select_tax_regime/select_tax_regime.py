@@ -7,7 +7,10 @@ import frappe
 from frappe.utils import flt, getdate
 from hrms.payroll.doctype.income_tax_slab.income_tax_slab import calculate_tax_by_tax_slab
 
-from india_payroll.india_payroll.tax_exemption_setup import setup_tax_exemption_categories
+from india_payroll.india_payroll.tax_exemption_setup import (
+	EXEMPTION_CATEGORIES,
+	setup_tax_exemption_categories,
+)
 
 OLD_REGIME_SLAB = "Old Tax Regime: 2019"
 NEW_REGIME_SLAB = "New Tax Regime: 2025-2026"
@@ -34,8 +37,7 @@ def setup_if_missing() -> dict:
 
 	create_income_tax_slabs()
 
-	if not frappe.db.count("Employee Tax Exemption Category"):
-		setup_tax_exemption_categories()
+	setup_tax_exemption_categories()
 
 	return {"ok": True}
 
@@ -47,15 +49,18 @@ def get_employee_details(employee: str) -> dict:
 	cats = frappe.get_all(
 		"Employee Tax Exemption Category",
 		fields=["name", "max_amount", "description"],
-		order_by="name",
 	)
 	if not cats:
 		setup_tax_exemption_categories()
 		cats = frappe.get_all(
 			"Employee Tax Exemption Category",
 			fields=["name", "max_amount", "description"],
-			order_by="name",
 		)
+
+	cats_by_name = {c.name: c for c in cats}
+	cats = [cats_by_name[name] for name in EXEMPTION_CATEGORIES if name in cats_by_name] + [
+		c for c in cats if c.name not in EXEMPTION_CATEGORIES
+	]
 
 	cat_list = []
 	for cat in cats:
@@ -142,7 +147,7 @@ def compute_tax_comparison(
 
 
 @frappe.whitelist()
-def set_tax_regime(employee: str, income_tax_slab: str) -> None:
+def set_tax_regime(employee: str, income_tax_slab: str) -> dict:
 	name = frappe.db.get_value(
 		"Salary Structure Assignment",
 		{"employee": employee, "docstatus": 1},
@@ -152,6 +157,7 @@ def set_tax_regime(employee: str, income_tax_slab: str) -> None:
 	if not name:
 		frappe.throw(frappe._("No active Salary Structure Assignment found for {0}").format(employee))
 	frappe.db.set_value("Salary Structure Assignment", name, "income_tax_slab", income_tax_slab)
+	return {"assignment": name}
 
 
 def evaluate_annual_gross(doc, method=None):

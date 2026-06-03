@@ -21,33 +21,6 @@ EXEMPTION_CATEGORIES = {
 			{"name": "Tuition Fees (up to 2 children)"},
 		],
 	},
-	"80CCC": {
-		"max_amount": 150000,
-		"description": "Contributions to pension or annuity plans from insurance companies. Counts toward the combined ₹1,50,000 limit with 80C.",
-		"sub_categories": [
-			{"name": "Pension Fund Contribution (Annuity Plan)"},
-		],
-	},
-	"80CCD(1)": {
-		"max_amount": 150000,
-		"description": "Employee's own NPS contribution. Counts toward the combined ₹1,50,000 limit with 80C and 80CCC.",
-		"sub_categories": [
-			{"name": "Employee NPS Contribution - 80CCD(1)"},
-		],
-	},
-	"80CCD(1B)": {
-		"max_amount": 50000,
-		"description": "Additional NPS contribution of up to ₹50,000 over and above the ₹1,50,000 combined limit. Entirely separate from the 80CCE cap.",
-		"sub_categories": [
-			{"name": "Additional NPS Contribution - 80CCD(1B)"},
-		],
-	},
-	"80CCD(2)": {
-		"description": "Employer's NPS contribution. Capped at 10% of basic salary (14% for government employees). Available under both old and new regime.",
-		"sub_categories": [
-			{"name": "Employer NPS Contribution - 80CCD(2)"},
-		],
-	},
 	"80D": {
 		"max_amount": 75000,
 		"description": "Health insurance premiums for yourself, spouse, children and parents.",
@@ -61,20 +34,19 @@ EXEMPTION_CATEGORIES = {
 			{"name": "Preventive Health Check-up", "max_amount": 5000},
 		],
 	},
-	"80DD": {
-		"max_amount": 125000,
-		"description": "Medical treatment and maintenance of a disabled dependent.",
+	"24": {
+		"max_amount": 200000,
+		"description": "Interest on home loan. Up to ₹2,00,000 for self-occupied property. No limit for let-out property.",
 		"sub_categories": [
-			{"name": "Dependent with 40-79% Disability", "max_amount": 75000},
-			{"name": "Dependent with 80%+ Disability"},
+			{"name": "Interest on Home Loan (Self-occupied)"},
+			{"name": "Interest on Home Loan (Let-out Property)"},
 		],
 	},
-	"80DDB": {
-		"max_amount": 100000,
-		"description": "Treatment of specified diseases such as cancer, neurological disorders and kidney failure.",
+	"80CCD(1B)": {
+		"max_amount": 50000,
+		"description": "Additional NPS contribution of up to ₹50,000 over and above the ₹1,50,000 combined limit. Entirely separate from the 80CCE cap.",
 		"sub_categories": [
-			{"name": "Specified Disease Treatment - Self or Dependent"},
-			{"name": "Specified Disease Treatment - Senior Citizen"},
+			{"name": "Additional NPS Contribution - 80CCD(1B)"},
 		],
 	},
 	"80E": {
@@ -83,26 +55,18 @@ EXEMPTION_CATEGORIES = {
 			{"name": "Interest on Education Loan"},
 		],
 	},
-	"80EE": {
+	"80TTA": {
+		"max_amount": 10000,
+		"description": "Interest on savings account with a bank, post office or cooperative bank. Not available to senior citizens.",
+		"sub_categories": [
+			{"name": "Interest on Savings Account"},
+		],
+	},
+	"80TTB": {
 		"max_amount": 50000,
-		"description": "Additional home loan interest deduction for first-time buyers. Loan must have been sanctioned between Apr 2016 and Mar 2017.",
+		"description": "Interest on savings and fixed deposits for senior citizens (60 years and above).",
 		"sub_categories": [
-			{"name": "Additional Interest on Home Loan (80EE)"},
-		],
-	},
-	"80EEA": {
-		"max_amount": 150000,
-		"description": "Additional home loan interest for affordable housing. Loan sanctioned between Apr 2019 and Mar 2022. Property stamp duty value must be ≤ ₹45 lakhs.",
-		"sub_categories": [
-			{"name": "Additional Interest on Affordable Housing Loan (80EEA)"},
-		],
-	},
-	"24": {
-		"max_amount": 200000,
-		"description": "Interest on home loan. Up to ₹2,00,000 for self-occupied property. No limit for let-out property.",
-		"sub_categories": [
-			{"name": "Interest on Home Loan (Self-occupied)"},
-			{"name": "Interest on Home Loan (Let-out Property)"},
+			{"name": "Interest on Savings and Fixed Deposits"},
 		],
 	},
 	"80G": {
@@ -127,18 +91,54 @@ EXEMPTION_CATEGORIES = {
 			{"name": "Donation to Registered Political Party"},
 		],
 	},
-	"80TTA": {
-		"max_amount": 10000,
-		"description": "Interest on savings account with a bank, post office or cooperative bank. Not available to senior citizens.",
+	"80CCC": {
+		"max_amount": 150000,
+		"description": "Contributions to pension or annuity plans from insurance companies. Counts toward the combined ₹1,50,000 limit with 80C.",
 		"sub_categories": [
-			{"name": "Interest on Savings Account"},
+			{"name": "Pension Fund Contribution (Annuity Plan)"},
 		],
 	},
-	"80TTB": {
-		"max_amount": 50000,
-		"description": "Interest on savings and fixed deposits for senior citizens (60 years and above).",
+	"80CCD(1)": {
+		"max_amount": 150000,
+		"description": "Employee's own NPS contribution. Counts toward the combined ₹1,50,000 limit with 80C and 80CCC.",
 		"sub_categories": [
-			{"name": "Interest on Savings and Fixed Deposits"},
+			{"name": "Employee NPS Contribution - 80CCD(1)"},
+		],
+	},
+	"80CCD(2)": {
+		"description": "Employer's NPS contribution. Capped at 10% of basic salary (14% for government employees). Available under both old and new regime.",
+		"sub_categories": [
+			{"name": "Employer NPS Contribution - 80CCD(2)"},
+		],
+	},
+	"80DD": {
+		"max_amount": 125000,
+		"description": "Medical treatment and maintenance of a disabled dependent.",
+		"sub_categories": [
+			{"name": "Dependent with 40-79% Disability", "max_amount": 75000},
+			{"name": "Dependent with 80%+ Disability"},
+		],
+	},
+	"80DDB": {
+		"max_amount": 100000,
+		"description": "Treatment of specified diseases such as cancer, neurological disorders and kidney failure.",
+		"sub_categories": [
+			{"name": "Specified Disease Treatment - Self or Dependent"},
+			{"name": "Specified Disease Treatment - Senior Citizen"},
+		],
+	},
+	"80EE": {
+		"max_amount": 50000,
+		"description": "Additional home loan interest deduction for first-time buyers. Loan must have been sanctioned between Apr 2016 and Mar 2017.",
+		"sub_categories": [
+			{"name": "Additional Interest on Home Loan (80EE)"},
+		],
+	},
+	"80EEA": {
+		"max_amount": 150000,
+		"description": "Additional home loan interest for affordable housing. Loan sanctioned between Apr 2019 and Mar 2022. Property stamp duty value must be ≤ ₹45 lakhs.",
+		"sub_categories": [
+			{"name": "Additional Interest on Affordable Housing Loan (80EEA)"},
 		],
 	},
 	"80U": {
@@ -158,10 +158,20 @@ def setup_tax_exemption_categories():
 
 
 def create_category(name, data):
-	if not frappe.db.exists("Employee Tax Exemption Category", name):
+	max_amount = data.get("max_amount") or 0
+	if frappe.db.exists("Employee Tax Exemption Category", name):
+		frappe.db.set_value(
+			"Employee Tax Exemption Category",
+			name,
+			{
+				"max_amount": max_amount,
+				"description": data.get("description"),
+			},
+		)
+	else:
 		doc = frappe.new_doc("Employee Tax Exemption Category")
 		doc.name = name
-		doc.max_amount = data.get("max_amount")
+		doc.max_amount = max_amount
 		doc.description = data.get("description")
 		doc.insert(ignore_permissions=True)
 
@@ -170,12 +180,16 @@ def create_category(name, data):
 
 
 def create_sub_category(sub_category, parent_category):
+	max_amount = sub_category.get("max_amount") or 0
 	if frappe.db.exists("Employee Tax Exemption Sub Category", sub_category["name"]):
+		frappe.db.set_value(
+			"Employee Tax Exemption Sub Category", sub_category["name"], "max_amount", max_amount
+		)
 		return
 
 	doc = frappe.new_doc("Employee Tax Exemption Sub Category")
 	doc.name = sub_category["name"]
 	doc.exemption_category = parent_category
-	doc.max_amount = sub_category.get("max_amount")
+	doc.max_amount = max_amount
 	doc.description = sub_category.get("description", "")
 	doc.insert(ignore_permissions=True)
