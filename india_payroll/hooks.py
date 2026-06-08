@@ -137,7 +137,7 @@ after_migrate = "india_payroll.install.after_migrate"
 
 doc_events = {
 	"Salary Structure Assignment": {
-		"on_submit": "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.evaluate_annual_gross",
+		"on_submit": "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.evaluate_annual_gross",
 	}
 }
 

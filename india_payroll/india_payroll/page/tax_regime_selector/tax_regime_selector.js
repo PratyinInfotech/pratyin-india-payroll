@@ -1,7 +1,7 @@
 // Copyright (c) 2026, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.pages["select-tax-regime"].on_page_load = function (wrapper) {
+frappe.pages["tax-regime-selector"].on_page_load = function (wrapper) {
 	new TaxRegimeSelector(wrapper);
 };
 
@@ -10,7 +10,7 @@ class TaxRegimeSelector {
 		this.wrapper = wrapper;
 		this.page = frappe.ui.make_app_page({
 			parent: wrapper,
-			title: __("Select Tax Regime"),
+			title: __("Tax Regime Selector"),
 			single_column: true,
 		});
 		this.employee_data = null;
@@ -95,13 +95,13 @@ class TaxRegimeSelector {
 
 		this.fetch_payroll_period();
 		frappe.call({
-			method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.setup_if_missing",
+			method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.setup_if_missing",
 		});
 	}
 
 	fetch_payroll_period() {
 		frappe.call({
-			method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.get_current_payroll_period",
+			method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.get_current_payroll_period",
 			callback: (r) => {
 				if (!r.message?.payroll_period) {
 					frappe.msgprint({
@@ -133,7 +133,7 @@ class TaxRegimeSelector {
 
 	load_employee(employee) {
 		frappe.call({
-			method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.get_employee_details",
+			method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.get_employee_details",
 			args: { employee },
 			callback: (r) => {
 				this.employee_data = r.message;
@@ -144,7 +144,7 @@ class TaxRegimeSelector {
 				this.payroll_period_control.set_value(r.message.payroll_period);
 				this.annual_gross_control.set_value(r.message.annual_gross);
 				frappe.call({
-					method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.compute_tax_comparison",
+					method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.compute_tax_comparison",
 					args: {
 						employee,
 						declarations: {},
@@ -411,7 +411,7 @@ class TaxRegimeSelector {
 	compute() {
 		const employee = this.employee_control.get_value();
 		frappe.call({
-			method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.compute_tax_comparison",
+			method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.compute_tax_comparison",
 			args: {
 				employee,
 				declarations: this.declarations,
@@ -602,7 +602,7 @@ class TaxRegimeSelector {
 				const employee = this.employee_control.get_value();
 				frappe.confirm(__("Set income tax slab to {0} for {1}?", [slab, employee]), () => {
 					frappe.call({
-						method: "india_payroll.india_payroll.page.select_tax_regime.select_tax_regime.set_tax_regime",
+						method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.set_tax_regime",
 						args: { employee, income_tax_slab: slab },
 						callback: (r) => {
 							const assignment = r.message?.assignment;

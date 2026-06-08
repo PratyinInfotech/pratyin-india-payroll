@@ -7,9 +7,9 @@
  "modified": "2026-05-28 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "India Payroll",
- "name": "select-tax-regime",
+ "name": "tax-regime-selector",
  "owner": "Administrator",
- "page_name": "Select Tax Regime",
+ "page_name": "Tax Regime Selector",
  "roles": [
   {
    "role": "HR User"
@@ -25,5 +25,5 @@
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Select Tax Regime"
+ "title": "Tax Regime Selector"
 }
