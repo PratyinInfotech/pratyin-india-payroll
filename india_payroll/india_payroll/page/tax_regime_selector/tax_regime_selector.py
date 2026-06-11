@@ -6,6 +6,9 @@ from datetime import date
 import frappe
 from frappe.utils import flt, getdate
 from hrms.payroll.doctype.income_tax_slab.income_tax_slab import calculate_tax_by_tax_slab
+from hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment import (
+	PERIODS_PER_YEAR,
+)
 
 from india_payroll.india_payroll.tax_exemption_setup import (
 	EXEMPTION_CATEGORIES,
@@ -160,84 +163,62 @@ def set_tax_regime(employee: str, income_tax_slab: str) -> dict:
 	return {"assignment": name}
 
 
-def evaluate_annual_gross(doc, method=None):
-	"""Compute annual gross from earning components and save to the assignment."""
-	base = flt(doc.base)
-	structure = frappe.get_doc("Salary Structure", doc.salary_structure)
-	monthly_gross = sum(
-		evaluate_component(row, base) for row in structure.earnings if not row.statistical_component
-	)
-	frappe.db.set_value("Salary Structure Assignment", doc.name, "annual_gross_earning", monthly_gross * 12)
-
-
 def get_employee_salary_data(employee):
-	assignment = frappe.db.get_value(
+	name = frappe.db.get_value(
 		"Salary Structure Assignment",
 		{"employee": employee, "docstatus": 1},
-		["name", "salary_structure", "base", "income_tax_slab", "annual_gross_earning"],
+		"name",
 		order_by="from_date desc",
-		as_dict=True,
 	)
-	if not assignment:
+	if not name:
 		frappe.throw(frappe._("No active Salary Structure Assignment found for {0}").format(employee))
 
-	base = flt(assignment.base)
-	structure = frappe.get_doc("Salary Structure", assignment.salary_structure)
+	ssa = frappe.get_doc("Salary Structure Assignment", name)
+	base = flt(ssa.base)
+	periods = PERIODS_PER_YEAR.get(
+		frappe.get_cached_value("Salary Structure", ssa.salary_structure, "payroll_frequency"), 12
+	)
 
-	monthly_gross = 0
-	monthly_hra = 0
-	monthly_lta = 0
-	monthly_employer_nps = 0
+	# Component amounts come from the SSA's own evaluation (single shared pass).
+	# Each row carries a full-cycle (per-period) default_amount.
+	components = ssa.get_evaluated_components()
 
-	for row in structure.earnings:
-		if row.statistical_component:
-			continue
-		amount = evaluate_component(row, base)
-		monthly_gross += amount
-		abbr = (row.abbr or "").upper()
-		if abbr == "HRA":
-			monthly_hra = amount
-		elif abbr == "LTA":
-			monthly_lta = amount
+	def find_amount(rows, *, abbr=None, component_contains=None):
+		for row in rows:
+			if abbr and (row.abbr or "").upper() == abbr:
+				return flt(row.default_amount)
+			if component_contains and component_contains in (row.salary_component or "").upper():
+				return flt(row.default_amount)
+		return 0
 
-	for row in structure.deductions:
-		component_name = (row.salary_component or "").upper()
-		if "NPS" in component_name and "EMPLOYER" in component_name:
-			monthly_employer_nps = evaluate_component(row, base)
+	monthly_hra = find_amount(components.earnings, abbr="HRA")
+	monthly_lta = find_amount(components.earnings, abbr="LTA")
+	monthly_employer_nps = find_amount(components.employer_contributions, component_contains="NPS")
 
-	# Prefer stored annual_gross_earning; fall back to calculation then latest slip
-	if flt(assignment.annual_gross_earning):
-		annual_gross = flt(assignment.annual_gross_earning)
-	else:
+	# Prefer the SSA's stored annual_gross_earning (computed on validate); fall back to
+	# the latest salary slip only for legacy assignments saved before the field existed.
+	annual_gross = flt(ssa.annual_gross_earning)
+	if not annual_gross:
 		slip_gross = frappe.db.get_value(
 			"Salary Slip",
 			{"employee": employee, "docstatus": 1},
 			"gross_pay",
 			order_by="posting_date desc",
 		)
-		annual_gross = flt(slip_gross) * 12 if slip_gross else monthly_gross * 12
+		annual_gross = flt(slip_gross) * periods
 
 	emp_dob = frappe.db.get_value("Employee", employee, "date_of_birth")
 
 	return {
 		"annual_gross": annual_gross,
-		"annual_basic": base * 12,
-		"annual_hra": monthly_hra * 12,
-		"annual_lta": monthly_lta * 12,
-		"annual_employer_nps": monthly_employer_nps * 12,
+		"annual_basic": base * periods,
+		"annual_hra": monthly_hra * periods,
+		"annual_lta": monthly_lta * periods,
+		"annual_employer_nps": monthly_employer_nps * periods,
 		"has_hra": monthly_hra > 0,
 		"is_senior_citizen": check_senior_citizen(emp_dob),
-		"current_income_tax_slab": assignment.income_tax_slab,
+		"current_income_tax_slab": ssa.income_tax_slab,
 	}
-
-
-def evaluate_component(row, base):
-	if row.amount_based_on_formula:
-		try:
-			return flt(frappe.safe_eval(row.formula, {"base": base}))
-		except Exception:
-			return 0
-	return flt(row.amount)
 
 
 def check_senior_citizen(date_of_birth):
