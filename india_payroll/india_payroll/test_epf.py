@@ -325,7 +325,11 @@ class TestEPF(HRMSTestSuite):
 			"Test EPF Net Pay Structure",
 			gross,
 		)
-		frappe.db.set_value("Employee", employee, "vpf_percentage", 5)
+		frappe.db.set_value(
+			"Employee",
+			employee,
+			{"vpf_mode": "Percentage", "vpf_percentage": 5},
+		)
 		slip.insert()
 
 		expected_deduction = 1_800 + 750  # employee 12% + VPF 5%

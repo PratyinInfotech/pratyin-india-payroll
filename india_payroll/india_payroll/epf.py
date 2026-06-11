@@ -14,8 +14,15 @@ VPF_COMPONENT = "Voluntary Provident Fund"
 EPF_EMPLOYEE_COMPONENTS = (EPF_EMPLOYEE_COMPONENT, VPF_COMPONENT)
 
 # --- Statutory constants --------------------------------------------------
+# Employer-side rates remain here even though the slip hook no longer applies
+# them — the EPF register / ECR report reads them when reconstructing the
+# canonical employer split per EPFO statute.
 EPF_WAGE_CEILING = 15_000  # PF / EPS / EDLI statutory ceiling
 EPF_EMPLOYEE_RATE = 0.12  # employee EPF share
+EPF_EMPLOYER_RATE = 0.12  # employer total share (split between EPF + EPS)
+EPS_RATE = 0.0833  # employer's pension diversion
+EDLI_RATE = 0.005  # employer's EDLI premium
+EPF_ADMIN_RATE = 0.005  # employer's EPF admin charges
 
 
 def apply_epf(doc, method=None) -> None:
