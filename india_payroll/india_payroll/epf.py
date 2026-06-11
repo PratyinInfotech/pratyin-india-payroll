@@ -4,48 +4,34 @@
 import frappe
 from frappe.utils import flt
 
-# --- Salary components ----------------------------------------------------
-# Employee deductions (reduce net pay)
+# Employee deductions (reduce net pay).  Employer EPF/EPS/EDLI/Admin are
+# components of type "Employer Contribution" and live on the Salary Structure's
+# employer_contributions table — they're rolled into CTC by Salary Structure
+# Assignment and are not injected onto the slip.
 EPF_EMPLOYEE_COMPONENT = "Provident Fund"
 VPF_COMPONENT = "Voluntary Provident Fund"
 
-# Employer contributions (statistical — computed, reportable, but excluded
-# from total_deduction / net_pay).  Employer cost is part of the CTC.
-EMPLOYER_EPF_COMPONENT = "Employer Provident Fund"
-EMPLOYER_EPS_COMPONENT = "Employer Pension Scheme"
-EDLI_COMPONENT = "Employees Deposit Linked Insurance"
-EPF_ADMIN_COMPONENT = "EPF Admin Charges"
-
-EPF_ALL_COMPONENTS = (
-	EPF_EMPLOYEE_COMPONENT,
-	VPF_COMPONENT,
-	EMPLOYER_EPF_COMPONENT,
-	EMPLOYER_EPS_COMPONENT,
-	EDLI_COMPONENT,
-	EPF_ADMIN_COMPONENT,
-)
+EPF_EMPLOYEE_COMPONENTS = (EPF_EMPLOYEE_COMPONENT, VPF_COMPONENT)
 
 # --- Statutory constants --------------------------------------------------
 EPF_WAGE_CEILING = 15_000  # PF / EPS / EDLI statutory ceiling
-
 EPF_EMPLOYEE_RATE = 0.12  # employee EPF share
-EPF_EMPLOYER_RATE = 0.12  # employer total share (split between EPF + EPS)
-EPS_RATE = 0.0833  # employer's pension diversion
-EDLI_RATE = 0.005  # employer's EDLI premium
-EPF_ADMIN_RATE = 0.005  # employer's EPF admin charges
 
 
 def apply_epf(doc, method=None) -> None:
 	"""
 	Salary Slip — before_save hook.
 
-	Computes and injects EPF-scheme rows:
-	  • Employee contribution (12 %) + VPF top-up         → deductions
-	  • Employer EPF / EPS / EDLI / Admin (statistical)   → earnings
+	Computes and injects employee EPF-scheme rows on the slip:
+	  • Employee contribution (12 %)   → deductions
+	  • VPF top-up (optional)          → deductions
+
+	Employer contributions (EPF / EPS / EDLI / Admin) are configured as
+	"Employer Contribution" components on the Salary Structure and handled
+	by Salary Structure Assignment / CTC — not by this hook.
 
 	Gated by a single `epf_applicable` flag on the Employee master.  All
-	employees are assumed to be post-1 Sept 2014 EPF members, so the EPS
-	rule reduces to: PF wage > ₹15,000 → no EPS, full employer 12 % to EPF.
+	employees are assumed to be post-1 Sept 2014 EPF members.
 	"""
 	if not frappe.db.get_single_value("Payroll Settings", "enable_epf"):
 		_remove_epf_components(doc)
@@ -76,43 +62,13 @@ def apply_epf(doc, method=None) -> None:
 		return
 
 	contribute_on_actual = bool(frappe.db.get_value("Employee", doc.employee, "contribute_on_actual_pf_wage"))
-
-	# Statutory bases
 	pf_wage_capped = min(pf_wage, EPF_WAGE_CEILING)
-	# Employee + employer EPF base depends on the per-employee toggle.
-	# EPS and EDLI are ALWAYS capped at the statutory ceiling.
 	epf_base = pf_wage if contribute_on_actual else pf_wage_capped
 
-	# --- Employee side ---------------------------------------------------
 	employee_epf = _epfo_round(epf_base * EPF_EMPLOYEE_RATE)
 	vpf = _compute_vpf(doc.employee, epf_base)
 
-	# --- Employer side ---------------------------------------------------
-	employer_total = _epfo_round(epf_base * EPF_EMPLOYER_RATE)
-
-	if pf_wage > EPF_WAGE_CEILING:
-		# Post-2014 high earner — entire employer 12 % goes to EPF (A/c 1).
-		# This branch fires regardless of the contribute-on-actual toggle.
-		employer_eps = 0
-	else:
-		employer_eps = _epfo_round(pf_wage_capped * EPS_RATE)
-
-	employer_epf = max(0, employer_total - employer_eps)
-	edli = _epfo_round(pf_wage_capped * EDLI_RATE)
-	# EPF Admin is 0.5 % of the contribution base.  The EPFO ₹500/establishment
-	# monthly minimum is enforced at the establishment level (across all
-	# employees) and is out of scope for per-slip computation.
-	epf_admin = _epfo_round(epf_base * EPF_ADMIN_RATE)
-
-	_apply_epf_components(
-		doc,
-		employee_epf=employee_epf,
-		vpf=vpf,
-		employer_epf=employer_epf,
-		employer_eps=employer_eps,
-		edli=edli,
-		epf_admin=epf_admin,
-	)
+	_apply_epf_components(doc, employee_epf=employee_epf, vpf=vpf)
 	_recalculate_totals(doc)
 
 
@@ -127,8 +83,8 @@ def _is_epf_applicable(employee: str) -> bool:
 
 
 def _required_components_exist() -> bool:
-	"""All six EPF-scheme salary components must exist before we inject rows."""
-	for name in EPF_ALL_COMPONENTS:
+	"""Both employee-side EPF salary components must exist before we inject rows."""
+	for name in EPF_EMPLOYEE_COMPONENTS:
 		if not frappe.db.exists("Salary Component", name):
 			return False
 	return True
@@ -171,24 +127,9 @@ def _compute_vpf(employee: str, epf_base: float) -> float:
 	return _epfo_round(epf_base * vpf_pct / 100.0)
 
 
-def _apply_epf_components(
-	doc,
-	*,
-	employee_epf: float,
-	vpf: float,
-	employer_epf: float,
-	employer_eps: float,
-	edli: float,
-	epf_admin: float,
-) -> None:
-	"""
-	Replace any existing EPF-scheme rows on the slip with freshly computed
-	amounts.  Employee rows go into `deductions`, employer rows into
-	`earnings` flagged statistical so they're excluded from net pay.
-	"""
-	# Strip any stale rows (e.g. from a previous save with different config)
-	doc.deductions = [d for d in doc.deductions if d.salary_component not in EPF_ALL_COMPONENTS]
-	doc.earnings = [e for e in doc.earnings if e.salary_component not in EPF_ALL_COMPONENTS]
+def _apply_epf_components(doc, *, employee_epf: float, vpf: float) -> None:
+	"""Replace any existing employee EPF rows on the slip with fresh amounts."""
+	doc.deductions = [d for d in doc.deductions if d.salary_component not in EPF_EMPLOYEE_COMPONENTS]
 
 	if employee_epf > 0:
 		doc.append(
@@ -202,44 +143,17 @@ def _apply_epf_components(
 			{"salary_component": VPF_COMPONENT, "amount": vpf},
 		)
 
-	for component, amount in (
-		(EMPLOYER_EPF_COMPONENT, employer_epf),
-		(EMPLOYER_EPS_COMPONENT, employer_eps),
-		(EDLI_COMPONENT, edli),
-		(EPF_ADMIN_COMPONENT, epf_admin),
-	):
-		if amount <= 0:
-			continue
-		doc.append(
-			"earnings",
-			{
-				"salary_component": component,
-				"amount": amount,
-				"statistical_component": 1,
-				"do_not_include_in_total": 1,
-			},
-		)
-
 
 def _remove_epf_components(doc) -> None:
-	"""Strip EPF-scheme rows from both earnings and deductions; recalculate."""
-	d_before = len(doc.deductions)
-	e_before = len(doc.earnings)
-	doc.deductions = [d for d in doc.deductions if d.salary_component not in EPF_ALL_COMPONENTS]
-	doc.earnings = [e for e in doc.earnings if e.salary_component not in EPF_ALL_COMPONENTS]
-	if len(doc.deductions) != d_before or len(doc.earnings) != e_before:
+	"""Strip employee EPF rows from deductions; recalculate."""
+	before = len(doc.deductions)
+	doc.deductions = [d for d in doc.deductions if d.salary_component not in EPF_EMPLOYEE_COMPONENTS]
+	if len(doc.deductions) != before:
 		_recalculate_totals(doc)
 
 
 def _recalculate_totals(doc) -> None:
-	"""
-	Recompute total_deduction and net_pay after modifying deduction rows.
-
-	Statistical earnings rows we inject (Employer EPF/EPS/EDLI/Admin) carry
-	`do_not_include_in_total=1`, so they don't shift gross_pay.  Gross was
-	already calculated by the Salary Slip controller before this hook ran;
-	we leave it alone.
-	"""
+	"""Recompute total_deduction and net_pay after modifying deduction rows."""
 	doc.total_deduction = sum(flt(d.amount) for d in doc.deductions if not d.do_not_include_in_total)
 	doc.net_pay = flt(doc.gross_pay) - flt(doc.total_deduction)
 	if hasattr(doc, "rounded_total"):

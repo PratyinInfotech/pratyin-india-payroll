@@ -485,10 +485,12 @@ def create_epf_components():
 	"""
 	Create the six EPF-scheme salary components if they don't already exist.
 
-	Only the employee's contributions (Provident Fund + VPF) are deductions
-	that reduce net pay.  Employer contributions (EPF / EPS / EDLI / Admin)
-	are stored as *statistical* earnings — computed and reportable but
-	excluded from gross / net so they don't double-count against take-home.
+	Employee contributions (Provident Fund + VPF) are deductions that reduce
+	net pay.  Employer contributions (EPF / EPS / EDLI / Admin) use the
+	dedicated "Employer Contribution" component type — they are configured
+	on the Salary Structure's Employer Contributions table and rolled into
+	CTC by the Salary Structure Assignment.  They are not posted to the
+	salary slip, so they don't affect gross / net pay.
 	"""
 	components = [
 		{
@@ -508,18 +510,16 @@ def create_epf_components():
 		{
 			"salary_component": "Employer Provident Fund",
 			"salary_component_abbr": "EREPF",
-			"type": "Earning",
-			"statistical_component": 1,
+			"type": "Employer Contribution",
 			"description": (
 				"Employer's EPF share (A/c 1) = 12% of PF wages minus the EPS diversion. "
-				"Statistical: shown for CTC reporting, excluded from net pay."
+				"Part of CTC; not posted to the salary slip."
 			),
 		},
 		{
 			"salary_component": "Employer Pension Scheme",
 			"salary_component_abbr": "EREPS",
-			"type": "Earning",
-			"statistical_component": 1,
+			"type": "Employer Contribution",
 			"description": (
 				"Employer's EPS share (A/c 10) = 8.33% of capped PF wages. "
 				"Zero for employees who first joined EPF on/after 1 Sept 2014 with PF wage > ₹15,000."
@@ -528,15 +528,13 @@ def create_epf_components():
 		{
 			"salary_component": "Employees Deposit Linked Insurance",
 			"salary_component_abbr": "EDLI",
-			"type": "Earning",
-			"statistical_component": 1,
+			"type": "Employer Contribution",
 			"description": "Employer's EDLI premium (A/c 21) = 0.5% of capped PF wages.",
 		},
 		{
 			"salary_component": "EPF Admin Charges",
 			"salary_component_abbr": "EPFADM",
-			"type": "Earning",
-			"statistical_component": 1,
+			"type": "Employer Contribution",
 			"description": "Employer's EPF administrative charges (A/c 2) = 0.5% of PF wages.",
 		},
 	]

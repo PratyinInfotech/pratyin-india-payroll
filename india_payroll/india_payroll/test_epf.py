@@ -13,10 +13,6 @@ from hrms.payroll.doctype.salary_structure.test_salary_structure import (
 from hrms.tests.utils import HRMSTestSuite
 
 from india_payroll.india_payroll.epf import (
-	EDLI_COMPONENT,
-	EMPLOYER_EPF_COMPONENT,
-	EMPLOYER_EPS_COMPONENT,
-	EPF_ADMIN_COMPONENT,
 	EPF_EMPLOYEE_COMPONENT,
 	EPF_WAGE_CEILING,
 	VPF_COMPONENT,
@@ -42,17 +38,21 @@ _TEST_EMAILS = [
 	"test_epf_below_ceiling@indiapayroll.com",
 	"test_epf_above_ceiling_capped@indiapayroll.com",
 	"test_epf_above_ceiling_actual@indiapayroll.com",
-	"test_epf_high_earner_no_eps@indiapayroll.com",
-	"test_epf_at_ceiling_eps_applies@indiapayroll.com",
 	"test_epf_vpf@indiapayroll.com",
 	"test_epf_not_applicable@indiapayroll.com",
 	"test_epf_disabled_setting@indiapayroll.com",
 	"test_epf_net_pay@indiapayroll.com",
-	"test_epf_rounding@indiapayroll.com",
 ]
 
 
 class TestEPF(HRMSTestSuite):
+	"""
+	Covers the employee-side EPF deduction injected by ``apply_epf`` onto the
+	salary slip.  Employer EPF / EPS / EDLI / Admin are now "Employer
+	Contribution" components evaluated by Salary Structure Assignment into
+	CTC — they don't appear on the slip and are not exercised here.
+	"""
+
 	def setUp(self):
 		create_epf_components()
 		self._ensure_epf_test_component()
@@ -134,11 +134,7 @@ class TestEPF(HRMSTestSuite):
 		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
 	)
 	def test_at_ceiling_standard_12_percent(self):
-		"""
-		PF wage ₹15,000 (= ceiling) should deduct ₹1,800 (12%).
-		Employer split: EPS = ₹1,250 (8.33% * 15,000, half-up), Employer EPF = ₹550.
-		EDLI = ₹75, EPF Admin = ₹75.
-		"""
+		"""PF wage ₹15,000 (= ceiling) should deduct ₹1,800 (12%)."""
 		gross = float(EPF_WAGE_CEILING)
 		_, slip = self._make_salary_slip(
 			"test_epf_below_ceiling@indiapayroll.com",
@@ -148,10 +144,6 @@ class TestEPF(HRMSTestSuite):
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 1_800)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 1_250)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 550)
-		self.assertEqual(self._amount(slip, "earnings", EDLI_COMPONENT), 75)
-		self.assertEqual(self._amount(slip, "earnings", EPF_ADMIN_COMPONENT), 75)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -160,9 +152,7 @@ class TestEPF(HRMSTestSuite):
 	def test_above_ceiling_default_caps_at_15000(self):
 		"""
 		PF wage ₹25,000 with `contribute_on_actual_pf_wage` unset (default).
-		Employee + employer EPF capped at ₹15,000 → ₹1,800 each side.
-		But because PF wage > ₹15,000 the post-2014 rule applies — EPS = 0
-		and the full employer ₹1,800 goes to Employer EPF.
+		Employee EPF capped at ₹15,000 → ₹1,800.
 		"""
 		gross = 25_000.0
 		_, slip = self._make_salary_slip(
@@ -173,8 +163,6 @@ class TestEPF(HRMSTestSuite):
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 1_800)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 1_800)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -183,9 +171,7 @@ class TestEPF(HRMSTestSuite):
 	def test_above_ceiling_contribute_on_actual(self):
 		"""
 		PF wage ₹25,000 with `contribute_on_actual_pf_wage = 1`.
-		  Employee EPF: 12% * 25,000 = ₹3,000
-		  Employer total: 12% * 25,000 = ₹3,000 (all to EPF — no EPS for high earners)
-		  EDLI: 0.5% * 15,000 = ₹75 (always capped by law)
+		Employee EPF: 12% * 25,000 = ₹3,000.
 		"""
 		gross = 25_000.0
 		employee, slip = self._make_salary_slip(
@@ -197,50 +183,6 @@ class TestEPF(HRMSTestSuite):
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 3_000)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 3_000)
-		self.assertEqual(self._amount(slip, "earnings", EDLI_COMPONENT), 75)
-
-	@HRMSTestSuite.change_settings(
-		"Payroll Settings",
-		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
-	)
-	def test_just_above_ceiling_no_eps(self):
-		"""
-		Even ₹1 above the ceiling triggers the EPS-ineligibility rule.
-		At PF wage ₹15,001:
-		  • capped contributions: 12% * 15,000 = ₹1,800 each side
-		  • EPS = 0, Employer EPF = ₹1,800
-		"""
-		gross = float(EPF_WAGE_CEILING + 1)
-		_, slip = self._make_salary_slip(
-			"test_epf_high_earner_no_eps@indiapayroll.com",
-			"Test EPF Just Above Ceiling Structure",
-			gross,
-		)
-		slip.insert()
-
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 1_800)
-
-	@HRMSTestSuite.change_settings(
-		"Payroll Settings",
-		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
-	)
-	def test_at_ceiling_eps_applies(self):
-		"""
-		At exactly ₹15,000 the EPS rule still applies (cutoff is strictly >).
-		"""
-		gross = float(EPF_WAGE_CEILING)
-		_, slip = self._make_salary_slip(
-			"test_epf_at_ceiling_eps_applies@indiapayroll.com",
-			"Test EPF At Ceiling EPS Applies Structure",
-			gross,
-		)
-		slip.insert()
-
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 1_250)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 550)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -251,7 +193,6 @@ class TestEPF(HRMSTestSuite):
 		An employee with vpf_percentage = 5 contributes 5% extra on top of 12%.
 		Employee EPF: 12% * 15,000 = ₹1,800
 		VPF:          5% * 15,000 = ₹750
-		Employer side is unchanged — no matching contribution for VPF.
 		"""
 		gross = float(EPF_WAGE_CEILING)
 		employee, slip = self._make_salary_slip(
@@ -264,8 +205,6 @@ class TestEPF(HRMSTestSuite):
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 1_800)
 		self.assertEqual(self._amount(slip, "deductions", VPF_COMPONENT), 750)
-		# Employer EPS still 8.33% * 15k = 1250 — VPF doesn't move it
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 1_250)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -273,8 +212,8 @@ class TestEPF(HRMSTestSuite):
 	)
 	def test_not_applicable_no_epf_rows(self):
 		"""
-		Employee.epf_applicable = 0 must suppress every EPF-scheme row, even
-		when EPF is enabled in Payroll Settings.
+		Employee.epf_applicable = 0 must suppress the employee EPF deduction,
+		even when EPF is enabled in Payroll Settings.
 		"""
 		_, slip = self._make_salary_slip(
 			"test_epf_not_applicable@indiapayroll.com",
@@ -285,8 +224,7 @@ class TestEPF(HRMSTestSuite):
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 0)
+		self.assertEqual(self._amount(slip, "deductions", VPF_COMPONENT), 0)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -294,7 +232,8 @@ class TestEPF(HRMSTestSuite):
 	)
 	def test_disabled_setting_no_epf_rows(self):
 		"""
-		Master switch off → no EPF rows even if Employee.epf_applicable is on.
+		Master switch off → no employee EPF rows even if Employee.epf_applicable
+		is on.
 		"""
 		_, slip = self._make_salary_slip(
 			"test_epf_disabled_setting@indiapayroll.com",
@@ -304,7 +243,6 @@ class TestEPF(HRMSTestSuite):
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 0)
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPF_COMPONENT), 0)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",
@@ -312,8 +250,9 @@ class TestEPF(HRMSTestSuite):
 	)
 	def test_net_pay_reduced_only_by_employee_share(self):
 		"""
-		Net pay must drop only by Employee PF + VPF; employer contributions
-		are statistical and must NOT shift net pay or gross.
+		Net pay must drop only by Employee PF + VPF.  Employer contributions
+		are now off-slip (Salary Structure / CTC), so they cannot shift net
+		pay or gross even structurally.
 		"""
 		gross = float(EPF_WAGE_CEILING)
 		employee, slip = self._make_salary_slip(
@@ -328,23 +267,3 @@ class TestEPF(HRMSTestSuite):
 		self.assertAlmostEqual(slip.total_deduction, expected_deduction, places=2)
 		self.assertAlmostEqual(slip.gross_pay, gross, places=2)
 		self.assertAlmostEqual(slip.net_pay, gross - expected_deduction, places=2)
-
-	@HRMSTestSuite.change_settings(
-		"Payroll Settings",
-		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
-	)
-	def test_eps_half_up_rounding(self):
-		"""
-		8.33% * 15,000 = 1249.5 must round HALF-UP to ₹1,250, per EPFO
-		convention.  Python's built-in round() uses banker's rounding which
-		can give different results at .5 boundaries; we use explicit half-up.
-		"""
-		gross = float(EPF_WAGE_CEILING)
-		_, slip = self._make_salary_slip(
-			"test_epf_rounding@indiapayroll.com",
-			"Test EPF Rounding Structure",
-			gross,
-		)
-		slip.insert()
-
-		self.assertEqual(self._amount(slip, "earnings", EMPLOYER_EPS_COMPONENT), 1_250)
