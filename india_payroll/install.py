@@ -201,6 +201,27 @@ def get_custom_fields():
 				"fieldtype": "Check",
 				"insert_after": "india_payroll_lwf_section",
 			},
+			{
+				"fieldname": "india_payroll_epf_section",
+				"label": "Employee Provident Fund",
+				"fieldtype": "Section Break",
+				"insert_after": "enable_lwf",
+			},
+			{
+				"fieldname": "enable_epf",
+				"label": "Enable EPF Deduction",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_epf_section",
+			},
+			{
+				"fieldname": "epf_establishment_code",
+				"label": "EPF Establishment Code",
+				"fieldtype": "Data",
+				"insert_after": "enable_epf",
+				"depends_on": "eval:doc.enable_epf",
+				"translatable": 0,
+				"description": "EPFO Establishment Code used in the ECR file header.",
+			},
 		],
 		"Employee": [
 			{
@@ -286,6 +307,81 @@ def get_custom_fields():
 				"depends_on": "eval:doc.lwf_exempted",
 				"translatable": 0,
 			},
+			{
+				"fieldname": "india_payroll_epf_section",
+				"label": "Employee Provident Fund",
+				"fieldtype": "Section Break",
+				"insert_after": "lwf_exemption_reason",
+			},
+			{
+				"fieldname": "epf_applicable",
+				"label": "EPF Applicable",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_epf_section",
+				"description": (
+					"Opt this employee into EPF deduction. The system defers to this "
+					"flag rather than enforcing a wage-based eligibility rule."
+				),
+			},
+			{
+				"fieldname": "uan_number",
+				"label": "UAN",
+				"fieldtype": "Data",
+				"insert_after": "epf_applicable",
+				"translatable": 0,
+				"description": "12-digit Universal Account Number issued by EPFO.",
+			},
+			{
+				"fieldname": "pf_name",
+				"label": "Name as per UAN",
+				"fieldtype": "Data",
+				"insert_after": "uan_number",
+				"translatable": 0,
+				"description": "Employee name as registered with EPFO. May differ from HR name; used in the ECR file.",
+			},
+			{
+				"fieldname": "india_payroll_epf_cb",
+				"fieldtype": "Column Break",
+				"insert_after": "pf_name",
+			},
+			{
+				"fieldname": "contribute_on_actual_pf_wage",
+				"label": "Contribute on Actual PF Wage",
+				"fieldtype": "Check",
+				"insert_after": "india_payroll_epf_cb",
+				"description": (
+					"If checked, employee + employer EPF contributions are computed on the "
+					"actual PF wage when it exceeds ₹15,000. EPS and EDLI remain capped by law."
+				),
+			},
+			{
+				"fieldname": "vpf_mode",
+				"label": "VPF Mode",
+				"fieldtype": "Select",
+				"options": "Amount\nPercentage",
+				"default": "Amount",
+				"insert_after": "contribute_on_actual_pf_wage",
+				"description": "Whether VPF is deducted as a fixed monthly amount or a % of PF wages.",
+			},
+			{
+				"fieldname": "vpf_percentage",
+				"label": "VPF Percentage",
+				"fieldtype": "Percent",
+				"insert_after": "vpf_mode",
+				"depends_on": "eval:doc.vpf_mode == 'Percentage'",
+				"description": "Voluntary Provident Fund — additional employee contribution rate over 12%.",
+			},
+			{
+				"fieldname": "vpf_amount",
+				"label": "VPF Amount",
+				"fieldtype": "Currency",
+				"insert_after": "vpf_percentage",
+				"depends_on": "eval:doc.vpf_mode == 'Amount'",
+				"description": (
+					"Fixed monthly VPF amount elected by the employee. "
+					"Prorated by payment days when there is LOP."
+				),
+			},
 		],
 		"Income Tax Slab": [
 			{
@@ -306,6 +402,19 @@ def get_custom_fields():
 				"insert_after": "employee",
 			},
 		],
+		"Salary Component": [
+			{
+				"fieldname": "include_in_pf_wage",
+				"label": "Include in PF Wage",
+				"fieldtype": "Check",
+				"insert_after": "statistical_component",
+				"description": (
+					"Include this component's amount in the PF wage base "
+					"(Basic + DA + any universally and ordinarily paid allowance, "
+					"per the 2019 Supreme Court ruling)."
+				),
+			},
+		],
 	}
 
 
@@ -314,6 +423,7 @@ def after_install():
 	create_professional_tax_component()
 	create_esi_components()
 	create_lwf_component()
+	create_epf_components()
 	create_income_tax_slabs()
 	setup_tax_exemption_categories()
 
@@ -390,6 +500,72 @@ def create_lwf_component():
 		}
 	)
 	doc.insert(ignore_permissions=True)
+
+
+def create_epf_components():
+	"""
+	Create the six EPF-scheme salary components if they don't already exist.
+
+	Employee contributions (Provident Fund + VPF) are deductions that reduce
+	net pay.  Employer contributions (EPF / EPS / EDLI / Admin) use the
+	dedicated "Employer Contribution" component type — they are configured
+	on the Salary Structure's Employer Contributions table and rolled into
+	CTC by the Salary Structure Assignment.  They are not posted to the
+	salary slip, so they don't affect gross / net pay.
+	"""
+	components = [
+		{
+			"salary_component": "Provident Fund",
+			"salary_component_abbr": "PF",
+			"type": "Deduction",
+			"statistical_component": 0,
+			"description": "Employee's 12% contribution to EPF (A/c 1) on PF wages.",
+		},
+		{
+			"salary_component": "Voluntary Provident Fund",
+			"salary_component_abbr": "VPF",
+			"type": "Deduction",
+			"statistical_component": 0,
+			"description": "Employee's voluntary contribution to EPF over and above the mandatory 12%.",
+		},
+		{
+			"salary_component": "Employer Provident Fund",
+			"salary_component_abbr": "EREPF",
+			"type": "Employer Contribution",
+			"description": (
+				"Employer's EPF share (A/c 1) = 12% of PF wages minus the EPS diversion. "
+				"Part of CTC; not posted to the salary slip."
+			),
+		},
+		{
+			"salary_component": "Employer Pension Scheme",
+			"salary_component_abbr": "EREPS",
+			"type": "Employer Contribution",
+			"description": (
+				"Employer's EPS share (A/c 10) = 8.33% of capped PF wages. "
+				"Zero for employees who first joined EPF on/after 1 Sept 2014 with PF wage > ₹15,000."
+			),
+		},
+		{
+			"salary_component": "Employees Deposit Linked Insurance",
+			"salary_component_abbr": "EDLI",
+			"type": "Employer Contribution",
+			"description": "Employer's EDLI premium (A/c 21) = 0.5% of capped PF wages.",
+		},
+		{
+			"salary_component": "EPF Admin Charges",
+			"salary_component_abbr": "EPFADM",
+			"type": "Employer Contribution",
+			"description": "Employer's EPF administrative charges (A/c 2) = 0.5% of PF wages.",
+		},
+	]
+
+	for data in components:
+		if frappe.db.exists("Salary Component", data["salary_component"]):
+			continue
+		doc = frappe.new_doc("Salary Component")
+		doc.update(data)
+		doc.insert(ignore_permissions=True)
 
 
 def create_income_tax_slabs():
