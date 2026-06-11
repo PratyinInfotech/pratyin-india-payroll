@@ -39,6 +39,8 @@ _TEST_EMAILS = [
 	"test_epf_above_ceiling_capped@indiapayroll.com",
 	"test_epf_above_ceiling_actual@indiapayroll.com",
 	"test_epf_vpf@indiapayroll.com",
+	"test_epf_vpf_amount@indiapayroll.com",
+	"test_epf_vpf_amount_lop@indiapayroll.com",
 	"test_epf_not_applicable@indiapayroll.com",
 	"test_epf_disabled_setting@indiapayroll.com",
 	"test_epf_net_pay@indiapayroll.com",
@@ -188,9 +190,9 @@ class TestEPF(HRMSTestSuite):
 		"Payroll Settings",
 		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
 	)
-	def test_vpf_adds_separate_deduction_row(self):
+	def test_vpf_percentage_mode(self):
 		"""
-		An employee with vpf_percentage = 5 contributes 5% extra on top of 12%.
+		vpf_mode = Percentage, vpf_percentage = 5: 5% extra on the EPF base.
 		Employee EPF: 12% * 15,000 = ₹1,800
 		VPF:          5% * 15,000 = ₹750
 		"""
@@ -200,11 +202,74 @@ class TestEPF(HRMSTestSuite):
 			"Test EPF VPF Structure",
 			gross,
 		)
-		frappe.db.set_value("Employee", employee, "vpf_percentage", 5)
+		frappe.db.set_value(
+			"Employee",
+			employee,
+			{"vpf_mode": "Percentage", "vpf_percentage": 5},
+		)
 		slip.insert()
 
 		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 1_800)
 		self.assertEqual(self._amount(slip, "deductions", VPF_COMPONENT), 750)
+
+	@HRMSTestSuite.change_settings(
+		"Payroll Settings",
+		{"enable_epf": 1, "enable_professional_tax": 0, "enable_esic": 0, "enable_lwf": 0},
+	)
+	def test_vpf_amount_mode(self):
+		"""
+		vpf_mode = Amount, vpf_amount = ₹2,000: fixed lumpsum deduction
+		regardless of PF wage. vpf_percentage is ignored.
+		"""
+		gross = float(EPF_WAGE_CEILING)
+		employee, slip = self._make_salary_slip(
+			"test_epf_vpf_amount@indiapayroll.com",
+			"Test EPF VPF Amount Structure",
+			gross,
+		)
+		frappe.db.set_value(
+			"Employee",
+			employee,
+			{"vpf_mode": "Amount", "vpf_amount": 2_000, "vpf_percentage": 5},
+		)
+		slip.insert()
+
+		self.assertEqual(self._amount(slip, "deductions", EPF_EMPLOYEE_COMPONENT), 1_800)
+		self.assertEqual(self._amount(slip, "deductions", VPF_COMPONENT), 2_000)
+
+	def test_vpf_amount_mode_prorates_on_lop(self):
+		"""
+		Amount mode prorates the elected monthly lumpsum by
+		payment_days / total_working_days so LOP months don't over-deduct.
+
+		Tested as a unit against ``_compute_vpf`` so we can dictate
+		payment_days / total_working_days without staging an attendance
+		fixture; the slip-side proration of earnings is exercised separately
+		by Percentage mode tests.
+		"""
+		from india_payroll.india_payroll.epf import _compute_vpf
+
+		employee = make_employee(
+			"test_epf_vpf_amount_lop@indiapayroll.com",
+			company="_Test Company",
+		)
+		frappe.db.set_value(
+			"Employee",
+			employee,
+			{"vpf_mode": "Amount", "vpf_amount": 3_000},
+		)
+
+		# Full month: no proration.
+		full = frappe._dict(employee=employee, payment_days=30, total_working_days=30)
+		self.assertEqual(_compute_vpf(full, epf_base=15_000), 3_000)
+
+		# 5 LOP days in a 30-day month → 25/30 * 3000 = 2500.
+		lop = frappe._dict(employee=employee, payment_days=25, total_working_days=30)
+		self.assertEqual(_compute_vpf(lop, epf_base=15_000), 2_500)
+
+		# Fractional payment_days (half-day LOP) — 24.5/30 * 3000 = 2450.
+		half_day = frappe._dict(employee=employee, payment_days=24.5, total_working_days=30)
+		self.assertEqual(_compute_vpf(half_day, epf_base=15_000), 2_450)
 
 	@HRMSTestSuite.change_settings(
 		"Payroll Settings",

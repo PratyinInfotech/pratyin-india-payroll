@@ -355,11 +355,32 @@ def get_custom_fields():
 				),
 			},
 			{
+				"fieldname": "vpf_mode",
+				"label": "VPF Mode",
+				"fieldtype": "Select",
+				"options": "Amount\nPercentage",
+				"default": "Amount",
+				"insert_after": "contribute_on_actual_pf_wage",
+				"description": "Whether VPF is deducted as a fixed monthly amount or a % of PF wages.",
+			},
+			{
 				"fieldname": "vpf_percentage",
 				"label": "VPF Percentage",
 				"fieldtype": "Percent",
-				"insert_after": "contribute_on_actual_pf_wage",
+				"insert_after": "vpf_mode",
+				"depends_on": "eval:doc.vpf_mode == 'Percentage'",
 				"description": "Voluntary Provident Fund — additional employee contribution rate over 12%.",
+			},
+			{
+				"fieldname": "vpf_amount",
+				"label": "VPF Amount",
+				"fieldtype": "Currency",
+				"insert_after": "vpf_percentage",
+				"depends_on": "eval:doc.vpf_mode == 'Amount'",
+				"description": (
+					"Fixed monthly VPF amount elected by the employee. "
+					"Prorated by payment days when there is LOP."
+				),
 			},
 		],
 		"Income Tax Slab": [

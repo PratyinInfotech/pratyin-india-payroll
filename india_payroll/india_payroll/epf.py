@@ -66,7 +66,7 @@ def apply_epf(doc, method=None) -> None:
 	epf_base = pf_wage if contribute_on_actual else pf_wage_capped
 
 	employee_epf = _epfo_round(epf_base * EPF_EMPLOYEE_RATE)
-	vpf = _compute_vpf(doc.employee, epf_base)
+	vpf = _compute_vpf(doc, epf_base)
 
 	_apply_epf_components(doc, employee_epf=employee_epf, vpf=vpf)
 	_recalculate_totals(doc)
@@ -114,14 +114,42 @@ def _compute_pf_wage(doc) -> float:
 	return sum(flt(e.amount) for e in doc.earnings if e.salary_component in pf_components)
 
 
-def _compute_vpf(employee: str, epf_base: float) -> float:
+def _compute_vpf(doc, epf_base: float) -> float:
 	"""
 	Voluntary Provident Fund — additional employee contribution above 12 %.
 
-	Configured as a percentage on the Employee master.  The employer does
-	not match VPF.
+	Two modes (Employee master, default Amount):
+	  • ``Amount`` — a fixed ``vpf_amount`` the employee elected per month,
+	    prorated by payment_days / total_working_days so LOP months don't
+	    over-deduct.
+	  • ``Percentage`` — ``vpf_percentage`` of the EPF base (which already
+	    follows the contribute-on-actual / capped rule and slip proration).
+
+	The employer does not match VPF.  Falls back to Amount mode when
+	``vpf_mode`` is unset (existing records before the field was added);
+	combined with vpf_amount defaulting to 0, this means no surprise VPF
+	deduction appears for employees who never opted in.
 	"""
-	vpf_pct = flt(frappe.db.get_value("Employee", employee, "vpf_percentage"))
+	emp = (
+		frappe.db.get_value(
+			"Employee",
+			doc.employee,
+			["vpf_mode", "vpf_percentage", "vpf_amount"],
+			as_dict=True,
+		)
+		or frappe._dict()
+	)
+
+	if (emp.vpf_mode or "Amount") == "Amount":
+		amount = flt(emp.vpf_amount)
+		if amount <= 0:
+			return 0.0
+		total_days = flt(doc.total_working_days)
+		if total_days > 0:
+			amount = amount * flt(doc.payment_days) / total_days
+		return _epfo_round(amount)
+
+	vpf_pct = flt(emp.vpf_percentage)
 	if vpf_pct <= 0:
 		return 0.0
 	return _epfo_round(epf_base * vpf_pct / 100.0)
