@@ -24,6 +24,11 @@ class TaxRegimeSelector {
 
 	setup_employee_filter() {
 		$(this.page.main).html(`
+			<style>
+				.regime-radio-card { transition: box-shadow 0.1s; }
+				.regime-radio-card:hover { box-shadow: 0 0 0 1px var(--gray-400); }
+				.section-header-row:hover { background: var(--gray-50); }
+			</style>
 			<div style="padding: 20px;">
 				<div style="display:flex; gap:16px; align-items:center;">
 					<div style="flex:0 0 65%; max-width:65%; display:flex; gap:16px; min-width:0;">
@@ -97,6 +102,11 @@ class TaxRegimeSelector {
 		frappe.call({
 			method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.setup_if_missing",
 		});
+
+		// Default to the logged-in user's employee, if any.
+		window.hrms?.get_current_employee?.().then((employee) => {
+			if (employee) this.employee_control.set_value(employee);
+		});
 	}
 
 	fetch_payroll_period() {
@@ -123,6 +133,7 @@ class TaxRegimeSelector {
 	}
 
 	render_placeholder() {
+		this.page.clear_primary_action();
 		$("#comparison-alert").html("");
 		$("#page-body").html(`
 			<div class="text-center text-muted" style="padding: 60px 0; font-size: var(--text-lg);">
@@ -137,17 +148,30 @@ class TaxRegimeSelector {
 			args: { employee },
 			callback: (r) => {
 				this.employee_data = r.message;
-				this.declarations = {};
 				this.rent_monthly = 0;
 				this.city_type = "non-metro";
 				this.annual_gross = flt(r.message.annual_gross);
+				// Reflect the employee's current regime on load; stage starts at saved.
+				this.selected_slab = r.message.current_income_tax_slab || null;
+				this.staged_slab = this.selected_slab;
+				// Submitted SSAs are read-only (radios + Save Regime hidden).
+				this.is_submitted = r.message.ssa_docstatus === 1;
+
+				// Prefill statutory deductions (EPF, employee NPS) matched on the server.
+				this._prefill = r.message.prefill_declarations || {};
+				this.declarations = {};
+				Object.entries(this._prefill).forEach(([section, subs]) => {
+					const total = Object.values(subs).reduce((a, b) => a + flt(b), 0);
+					if (total > 0) this.declarations[section] = total;
+				});
+
 				this.payroll_period_control.set_value(r.message.payroll_period);
 				this.annual_gross_control.set_value(r.message.annual_gross);
 				frappe.call({
 					method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.compute_tax_comparison",
 					args: {
 						employee,
-						declarations: {},
+						declarations: this.declarations,
 						rent_monthly: 0,
 						city_type: "non-metro",
 						annual_gross: this.annual_gross,
@@ -176,27 +200,46 @@ class TaxRegimeSelector {
 		$("#page-body").html(`
 			<div style="display:flex; gap:15px; align-items:flex-start;">
 				<div style="flex:0 0 65%; max-width:65%; min-width:0;">
-					<div class="frappe-card" style="padding: 16px; max-height:80vh; overflow-y:auto;">
-						${
-							this.employee_data.has_hra
-								? `
-						<h6 class="form-section-heading uppercase">${__("Section 10")}</h6>
-						${this.render_section10_inputs()}`
-								: ""
-						}
-						<div style="display:flex; justify-content:space-between; align-items:center; margin-top:32px; margin-bottom:12px;">
-							<h6 class="form-section-heading uppercase" style="margin:0;">${__("Chapter VI-A Deductions")}</h6>
-							<div>
-								<button class="btn btn-xs btn-default" id="expand-all-btn" style="margin-right:4px;">${__(
-									"Expand All"
-								)}</button>
-								<button class="btn btn-xs btn-default" id="collapse-all-btn">${__("Collapse All")}</button>
+					<div class="frappe-card" style="padding: 16px; max-height:80vh; display:flex; flex-direction:column;">
+						<div style="display:flex; justify-content:flex-end; flex-shrink:0; margin-bottom:12px;">
+							<button class="btn btn-default btn-sm declare-btn">
+								${__("Declare Tax Exemptions →")}
+							</button>
+						</div>
+						<div style="overflow-y:auto; overflow-x:hidden; flex:1; min-height:0;">
+							${
+								this.employee_data.has_hra
+									? `
+							<h6 class="form-section-heading uppercase">${__("Section 10")}</h6>
+							${this.render_section10_inputs()}`
+									: ""
+							}
+							<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; ${
+								this.employee_data.has_hra ? "margin-top:32px;" : ""
+							} margin-bottom:12px;">
+								<h6 class="form-section-heading uppercase" style="margin:0; white-space:nowrap;">${__(
+									"Chapter VI-A Deductions"
+								)}</h6>
+								<div style="display:flex; align-items:center; gap:8px;">
+									<div style="position:relative;" id="declaration-search-wrapper">
+										<span style="position:absolute; left:8px; top:50%; transform:translateY(-50%); display:inline-flex; color:var(--text-muted); pointer-events:none;">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+										</span>
+										<input type="text" class="form-control input-sm" id="declaration-search"
+											placeholder="${__("Search")}" style="padding-left:28px;">
+									</div>
+									<button class="btn btn-xs btn-default" id="expand-all-btn">${__("Expand All")}</button>
+									<button class="btn btn-xs btn-default" id="collapse-all-btn">${__("Collapse All")}</button>
+								</div>
+							</div>
+							<div id="declaration-table-wrapper"></div>
+							<div id="declaration-empty" class="text-muted text-center" style="display:none; padding:20px;">
+								${__("No deductions found")}
 							</div>
 						</div>
-						<div id="declaration-table-wrapper"></div>
 					</div>
 				</div>
-				<div style="flex:0 0 35%; max-width:35%; min-width:0; position:sticky; top:0; margin-right:15px;" id="comparison-panel">
+				<div style="flex:0 0 35%; max-width:35%; min-width:0; position:sticky; top:0; margin-right:15px; max-height:80vh; display:flex; flex-direction:column;" id="comparison-panel">
 					<div class="text-center text-muted" style="padding: 40px 0;">
 						${__("Computing...")}
 					</div>
@@ -238,9 +281,11 @@ class TaxRegimeSelector {
 		const cats = this._declaration_cats;
 		if (!cats.length) return;
 
+		// Seed per-section amounts from the server-matched prefill (EPF, NPS).
+		const prefill = this._prefill || {};
 		this._sub_amounts = {};
 		cats.forEach((cat) => {
-			this._sub_amounts[cat.name] = {};
+			this._sub_amounts[cat.name] = { ...(prefill[cat.name] || {}) };
 		});
 
 		const expanded_icon = frappe.utils.icon("es-line-down", "sm");
@@ -311,14 +356,14 @@ class TaxRegimeSelector {
 					<col style="width:30%">
 				</colgroup>
 				<thead>
-					<tr style="border-bottom:2px solid var(--border-color); background:var(--gray-50);">
-						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted);">${__(
+					<tr>
+						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted); position:sticky; top:-1px; z-index:1; background:var(--gray-50); box-shadow:inset 0 -2px 0 var(--border-color);">${__(
 							"Deduction / Investment"
 						)}</th>
-						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted); text-align:right;">${__(
+						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted); text-align:right; position:sticky; top:-1px; z-index:1; background:var(--gray-50); box-shadow:inset 0 -2px 0 var(--border-color);">${__(
 							"Limit"
 						)}</th>
-						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted); text-align:right;">${__(
+						<th style="padding:10px 12px; font-weight:500; color:var(--text-muted); text-align:right; position:sticky; top:-1px; z-index:1; background:var(--gray-50); box-shadow:inset 0 -2px 0 var(--border-color);">${__(
 							"Declared Amount"
 						)}</th>
 					</tr>
@@ -330,6 +375,32 @@ class TaxRegimeSelector {
 		wrapper.querySelectorAll("[data-total-for]").forEach((td) => {
 			this._total_cells[td.dataset.totalFor] = td;
 		});
+
+		// Reflect prefilled (EPF/NPS) amounts into the sub-category inputs and section totals.
+		Object.entries(this._sub_amounts).forEach(([section, subs]) => {
+			Object.entries(subs).forEach(([sub, amount]) => {
+				const input = wrapper.querySelector(
+					`.declaration-input[data-section="${section}"][data-sub="${sub}"]`
+				);
+				if (input) input.value = amount;
+			});
+			const total = Object.values(subs).reduce((a, b) => a + flt(b), 0);
+			if (this._total_cells[section]) {
+				this._total_cells[section].textContent = total > 0 ? this.fmt(total) : this.fmt(0);
+				this._total_cells[section].style.fontWeight = total > 0 ? "600" : "";
+			}
+		});
+
+		const search = document.getElementById("declaration-search");
+		if (search) {
+			search.addEventListener("input", (e) => this.filter_declarations(e.target.value));
+			// Match the search box width to the Declared Amount input column.
+			const sample_input = wrapper.querySelector(".declaration-input");
+			const search_wrapper = document.getElementById("declaration-search-wrapper");
+			if (sample_input && search_wrapper) {
+				search_wrapper.style.width = sample_input.offsetWidth + "px";
+			}
+		}
 
 		const section_states = new Map();
 
@@ -366,12 +437,44 @@ class TaxRegimeSelector {
 		});
 	}
 
+	filter_declarations(query) {
+		const q = (query || "").trim().toLowerCase();
+		const wrapper = document.getElementById("declaration-table-wrapper");
+		if (!wrapper) return;
+
+		let any_section_visible = false;
+		wrapper.querySelectorAll(".section-header-row").forEach((header) => {
+			const $header = $(header);
+			const sub_rows = $header.nextUntil(".section-header-row");
+			const header_text = $header.text().toLowerCase();
+			const header_match = header_text.includes(q);
+
+			let any_sub_match = false;
+			sub_rows.each((_, sub) => {
+				// A sub is visible if it matches, or its section header matches.
+				const match = !q || header_match || $(sub).text().toLowerCase().includes(q);
+				$(sub).toggle(match);
+				if (match) any_sub_match = true;
+			});
+
+			const header_visible = !q || header_match || any_sub_match;
+			$header.toggle(header_visible);
+			if (header_visible) any_section_visible = true;
+		});
+
+		$("#declaration-empty").toggle(!any_section_visible);
+	}
+
 	bind_input_events() {
-		$("#page-body").on("change", ".regime-input", () => {
+		// Namespaced + .off first so repeated employee loads don't stack handlers.
+		const $body = $("#page-body").off(".trs");
+
+		$body.on("change.trs", ".regime-input", () => {
 			this.collect_section10_inputs();
 			this.compute();
 		});
-		$("#page-body").on("change", ".declaration-input", (e) => {
+
+		$body.on("change.trs", ".declaration-input", (e) => {
 			const el = e.currentTarget;
 			const section = $(el).data("section");
 			const sub = $(el).data("sub");
@@ -388,10 +491,47 @@ class TaxRegimeSelector {
 				delete this.declarations[section];
 			}
 			if (this._total_cells?.[section]) {
-				this._total_cells[section].textContent = total > 0 ? this.fmt(total) : "";
+				this._total_cells[section].textContent = this.fmt(total);
 				this._total_cells[section].style.fontWeight = total > 0 ? "600" : "";
 			}
 			this.compute();
+		});
+
+		$body.on("click.trs", ".declare-btn", () => this.declare_exemptions());
+
+		// Radios stage the choice; the toolbar's Save Regime action commits it.
+		$body.on("change.trs", ".regime-radio", (e) => {
+			this.staged_slab = $(e.currentTarget).val();
+			if (this._last_result) this.render_comparison(this._last_result);
+		});
+	}
+
+	save_regime() {
+		const slab = this.staged_slab;
+		if (!slab) return;
+		const employee = this.employee_control.get_value();
+		frappe.confirm(__("Set income tax slab to {0} for {1}?", [slab, employee]), () => {
+			frappe.call({
+				method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.set_tax_regime",
+				args: { employee, income_tax_slab: slab },
+				callback: (r) => {
+					const assignment = r.message?.assignment;
+					const link = assignment
+						? `<a href="${frappe.utils.get_form_link(
+								"Salary Structure Assignment",
+								assignment
+						  )}">${assignment}</a>`
+						: "";
+					frappe.show_alert({
+						message: __("Tax Regime updated in Salary Structure Assignment {0}", [
+							link,
+						]),
+						indicator: "green",
+					});
+					this.selected_slab = slab;
+					if (this._last_result) this.render_comparison(this._last_result);
+				},
+			});
 		});
 	}
 
@@ -419,7 +559,10 @@ class TaxRegimeSelector {
 				city_type: this.city_type,
 				annual_gross: this.annual_gross,
 			},
-			callback: (r) => this.render_comparison(r.message),
+			callback: (r) => {
+				this._last_result = r.message;
+				this.render_comparison(r.message);
+			},
 		});
 	}
 
@@ -431,53 +574,65 @@ class TaxRegimeSelector {
 
 		const is_tie = savings === 0;
 
+		// A regime choice rendered as a radio card. Picking it stages the choice; the
+		// staged card gets a colored border (green, or blue on a tie). Label precedence
+		// is Selected > Suggested/Default.
 		const regime_card = (label, regime, is_winner, tie_pill) => {
+			const is_staged = this.staged_slab === regime.slab;
 			const is_selected = this.selected_slab === regime.slab;
-			const pill = is_tie
-				? tie_pill
-					? `<span class="badge indicator-pill blue no-indicator-dot" style="flex-shrink:0;">${__(
-							"Default"
-					  )}</span>`
-					: `<span class="badge indicator-pill gray no-indicator-dot" style="flex-shrink:0;">${__(
-							"Opt-in required"
-					  )}</span>`
-				: is_winner
-				? `<span class="badge indicator-pill green no-indicator-dot" style="flex-shrink:0;">${__(
-						"Suggested"
-				  )}</span>`
+
+			let pill_color = "";
+			let pill_label = "";
+			if (is_selected) {
+				pill_color = "green";
+				pill_label = __("Selected");
+			} else if (is_tie) {
+				if (tie_pill) {
+					pill_color = "blue";
+					pill_label = __("Default");
+				}
+			} else if (is_winner) {
+				pill_color = "green";
+				pill_label = __("Suggested");
+			}
+
+			const pill_html = pill_label
+				? `<span class="badge indicator-pill ${pill_color} no-indicator-dot" style="flex-shrink:0;">${pill_label}</span>`
 				: "";
+
+			const border = is_staged
+				? is_tie
+					? "var(--blue-500)"
+					: "var(--green-500)"
+				: "var(--border-color)";
+
+			const radio_html = this.is_submitted
+				? ""
+				: `<input type="radio" name="regime-choice" class="regime-radio" value="${
+						regime.slab
+				  }" ${
+						is_staged ? "checked" : ""
+				  } style="width:16px; height:16px; margin:0; flex-shrink:0;">`;
+
 			return `
-			<div class="frappe-card" style="padding: 16px;">
-				<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:6px;">
+			<label class="regime-radio-card frappe-card" style="flex:1 1 200px; min-width:200px; max-width:100%; margin:0; padding:14px 16px; ${
+				this.is_submitted ? "" : "cursor:pointer;"
+			} display:block;
+				border:1px solid ${border};">
+				<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
 					<strong style="white-space:nowrap;">${label}</strong>
-					${pill}
+					${radio_html}
 				</div>
-				<div class="text-muted" style="font-size: var(--text-xs); margin-bottom: 4px;">${__(
-					"Taxable Income"
-				)}</div>
-				<div style="font-size: var(--text-lg); font-weight: 600; margin-bottom: 12px;">${this.fmt(
-					regime.taxable_income
-				)}</div>
-				<div class="text-muted" style="font-size: var(--text-xs); margin-bottom: 4px;">${__(
+				<div class="text-muted" style="font-size:var(--text-sm); margin-bottom:4px;">${__(
 					"Tax + Cess"
 				)}</div>
-				<div style="font-size: var(--text-2xl); font-weight: 700; color: ${
-					is_winner ? "var(--primary)" : "inherit"
-				};">${this.fmt(regime.tax)}</div>
-				<div style="margin-top: 16px;">
-					${
-						is_selected
-							? `<button class="btn btn-${
-									is_winner ? "primary" : "default"
-							  } btn-block btn-sm" disabled>${__("Selected ✓")}</button>`
-							: `<button class="btn btn-${
-									is_winner ? "primary" : "default"
-							  } btn-block btn-sm select-regime-btn" data-slab="${
-									regime.slab
-							  }">${__("Select")}</button>`
-					}
+				<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px;">
+					<span style="font-size:var(--text-2xl); font-weight:700; line-height:1; color:${
+						is_winner ? "var(--primary)" : "inherit"
+					};">${this.fmt(regime.tax)}</span>
+					${pill_html}
 				</div>
-			</div>`;
+			</label>`;
 		};
 
 		const alert_color = is_tie ? "blue" : "green";
@@ -501,49 +656,41 @@ class TaxRegimeSelector {
 
 		$("#comparison-alert").html("");
 
+		// Save Regime lives in the page toolbar (top-right); shown only for editable
+		// (draft) assignments when a regime is selected. Submitted SSAs are read-only.
+		if (this.staged_slab && !this.is_submitted) {
+			this.page.set_primary_action(__("Save Regime"), () => this.save_regime());
+		} else {
+			this.page.clear_primary_action();
+		}
+
 		const html = `
-			<div class="form-message ${alert_color}" style="margin-bottom:12px; font-weight:normal; margin-right:15px;">
+			<div style="display:flex; flex-wrap:wrap; gap:15px; margin-bottom:12px; margin-right:15px; align-items:stretch; flex-shrink:0;">
+				${regime_card(__("Old Regime"), old, !is_tie && old_wins, false)}
+				${regime_card(__("New Regime"), new_, !is_tie && !old_wins, true)}
+			</div>
+			<div class="form-message ${alert_color}" style="margin-bottom:12px; font-weight:normal; margin-right:15px; flex-shrink:0;">
 				${winner_label}
 			</div>
-			<div style="display:flex; gap:15px; margin-bottom:12px; margin-right:15px; overflow-x:auto;">
-				<div style="flex:1 0 185px;">${regime_card(
-					__("Old Regime"),
-					old,
-					!is_tie && old_wins,
-					false
-				)}</div>
-				<div style="flex:1 0 185px;">${regime_card(
-					__("New Regime"),
-					new_,
-					!is_tie && !old_wins,
-					true
-				)}</div>
-			</div>
-			<div style="display:flex; flex-direction:column; border:1px solid var(--border-color); border-radius:var(--border-radius); overflow:hidden; font-size:var(--text-sm); margin-right:15px;">
-				<table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+			<div style="display:flex; flex-direction:column; border:1px solid var(--border-color); border-radius:var(--border-radius); overflow:hidden; font-size:var(--text-sm); margin-right:15px; flex:1; min-height:0;">
+				<table style="width:100%; border-collapse:collapse; table-layout:fixed; flex-shrink:0;">
 					${colgroup}
 					<thead>${thead}</thead>
 					<tbody>${top}</tbody>
 				</table>
-				<div style="overflow-y:auto; max-height:calc(80vh - 500px); border-top:1px solid var(--border-color);">
+				<div style="overflow-y:auto; flex:1; min-height:0; border-top:1px solid var(--border-color);">
 					<table style="width:100%; border-collapse:collapse; table-layout:fixed;">
 						${colgroup}
 						<tbody>${middle}</tbody>
 					</table>
 				</div>
-				<table style="width:100%; border-collapse:collapse; table-layout:fixed; border-top:2px solid var(--border-color);">
+				<table style="width:100%; border-collapse:collapse; table-layout:fixed; border-top:2px solid var(--border-color); flex-shrink:0;">
 					${colgroup}
 					<tbody>${bottom}</tbody>
 				</table>
-			</div>
-			<div style="text-align:right; margin-top:12px; margin-right:15px;">
-				<button class="btn btn-default btn-sm declare-btn">
-					${__("Declare Tax Exemptions →")}
-				</button>
 			</div>`;
 
 		$("#comparison-panel").html(html);
-		this.bind_action_buttons();
 	}
 
 	build_comparison_rows(old, new_) {
@@ -594,79 +741,44 @@ class TaxRegimeSelector {
 		return { top, middle: middle_rows.join(""), bottom };
 	}
 
-	bind_action_buttons() {
-		$("#page-body")
-			.find(".select-regime-btn")
-			.on("click", (e) => {
-				const slab = $(e.currentTarget).data("slab");
-				const employee = this.employee_control.get_value();
-				frappe.confirm(__("Set income tax slab to {0} for {1}?", [slab, employee]), () => {
-					frappe.call({
-						method: "india_payroll.india_payroll.page.tax_regime_selector.tax_regime_selector.set_tax_regime",
-						args: { employee, income_tax_slab: slab },
-						callback: (r) => {
-							const assignment = r.message?.assignment;
-							const link = assignment
-								? `<a href="${frappe.utils.get_form_link(
-										"Salary Structure Assignment",
-										assignment
-								  )}">${assignment}</a>`
-								: "";
-							frappe.show_alert({
-								message: __(
-									"Tax Regime updated in Salary Structure Assignment {0}",
-									[link]
-								),
-								indicator: "green",
-							});
-							this.selected_slab = slab;
-							this.compute();
-						},
+	declare_exemptions() {
+		const employee = this.employee_control.get_value();
+		const payroll_period = this.payroll_period_control.get_value();
+		const entries = [];
+		Object.entries(this._sub_amounts || {}).forEach(([section, subs]) => {
+			Object.entries(subs).forEach(([sub_name, amount]) => {
+				if (amount > 0) {
+					entries.push({
+						exemption_category: section,
+						exemption_sub_category: sub_name,
+						amount,
 					});
-				});
+				}
 			});
+		});
 
-		$("#page-body")
-			.find(".declare-btn")
-			.on("click", () => {
-				const employee = this.employee_control.get_value();
-				const payroll_period = this.payroll_period_control.get_value();
-				const entries = [];
-				Object.entries(this._sub_amounts || {}).forEach(([section, subs]) => {
-					Object.entries(subs).forEach(([sub_name, amount]) => {
-						if (amount > 0) {
-							entries.push({
-								exemption_category: section,
-								exemption_sub_category: sub_name,
-								amount,
-							});
-						}
-					});
-				});
+		const rent_monthly = this.rent_monthly;
+		const city_type = this.city_type;
+		const has_hra = this.employee_data?.has_hra;
 
-				const rent_monthly = this.rent_monthly;
-				const city_type = this.city_type;
-				const has_hra = this.employee_data?.has_hra;
-
-				frappe.route_hooks.after_load = (frm) => {
-					if (frm.doctype !== "Employee Tax Exemption Declaration") return;
-					frm.set_value("employee", employee);
-					frm.set_value("payroll_period", payroll_period);
-					if (has_hra && rent_monthly > 0) {
-						frm.set_value("monthly_house_rent", rent_monthly);
-						frm.set_value("rented_in_metro_city", city_type === "metro" ? 1 : 0);
-					}
-					entries.forEach((e) => {
-						const row = frappe.model.add_child(frm.doc, "declarations");
-						row.exemption_category = e.exemption_category;
-						row.exemption_sub_category = e.exemption_sub_category;
-						row.amount = e.amount;
-					});
-					frm.refresh_field("declarations");
-					delete frappe.route_hooks.after_load;
-				};
-				frappe.new_doc("Employee Tax Exemption Declaration");
+		frappe.route_hooks.after_load = (frm) => {
+			if (frm.doctype !== "Employee Tax Exemption Declaration") return;
+			frm.set_value("employee", employee);
+			frm.set_value("payroll_period", payroll_period);
+			if (has_hra && rent_monthly > 0) {
+				frm.set_value("monthly_house_rent", rent_monthly);
+				frm.set_value("rented_in_metro_city", city_type === "metro" ? 1 : 0);
+			}
+			entries.forEach((e) => {
+				const row = frappe.model.add_child(frm.doc, "declarations");
+				row.exemption_category = e.exemption_category;
+				row.exemption_sub_category = e.exemption_sub_category;
+				row.amount = e.amount;
 			});
+			frm.refresh_field("declarations");
+			delete frappe.route_hooks.after_load;
+		};
+		frappe.new_doc("Employee Tax Exemption Declaration");
 	}
 
 	fmt(n) {

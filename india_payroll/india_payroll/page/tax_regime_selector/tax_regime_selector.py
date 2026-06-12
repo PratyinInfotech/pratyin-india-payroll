@@ -1,6 +1,7 @@
 # Copyright (c) 2026, Frappe Technologies Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
+import re
 from datetime import date
 
 import frappe
@@ -83,6 +84,7 @@ def get_employee_details(employee: str) -> dict:
 		)
 
 	data["exemption_categories"] = cat_list
+	data["prefill_declarations"] = build_prefill_declarations(data.pop("deductions", []), cat_list)
 
 	company = frappe.db.get_value("Employee", employee, "company")
 	today = frappe.utils.today()
@@ -93,6 +95,37 @@ def get_employee_details(employee: str) -> dict:
 	)
 	data["payroll_period"] = payroll_period or None
 	return data
+
+
+def _normalize(name: str) -> str:
+	return re.sub(r"[^a-z0-9]", "", (name or "").lower())
+
+
+def build_prefill_declarations(deductions: list, cat_list: list) -> dict:
+	"""Fuzzy-match each payable salary deduction to an exemption sub-category by
+	normalized name and return {category: {sub_category: annual_amount}}.
+
+	A deduction matches a sub-category when one normalized name contains the other
+	(e.g. 'Employee Provident Fund' -> 'Employee Provident Fund (EPF)'). Deductions
+	with no matching sub-category (e.g. Professional Tax) are skipped.
+	"""
+	subs = [
+		(cat["name"], sub["name"], _normalize(sub["name"]))
+		for cat in cat_list
+		for sub in cat.get("sub_categories", [])
+	]
+
+	prefill = {}
+	for deduction in deductions:
+		comp_norm = _normalize(deduction.get("component"))
+		if len(comp_norm) < 4:
+			continue
+		for cat_name, sub_name, sub_norm in subs:
+			if comp_norm in sub_norm or sub_norm in comp_norm:
+				prefill.setdefault(cat_name, {})[sub_name] = flt(deduction.get("annual_amount"))
+				break
+
+	return prefill
 
 
 @frappe.whitelist()
@@ -149,31 +182,100 @@ def compute_tax_comparison(
 	}
 
 
+def get_latest_assignment(employee):
+	"""Latest Salary Structure Assignment for the employee, regardless of docstatus
+	(draft or submitted). Returns the {name, docstatus} dict or None."""
+	return frappe.db.get_value(
+		"Salary Structure Assignment",
+		{"employee": employee},
+		["name", "docstatus"],
+		order_by="from_date desc, creation desc",
+		as_dict=True,
+	)
+
+
 @frappe.whitelist()
 def set_tax_regime(employee: str, income_tax_slab: str) -> dict:
-	name = frappe.db.get_value(
+	assignment = get_latest_assignment(employee)
+	if not assignment:
+		frappe.throw(frappe._("No Salary Structure Assignment found for {0}").format(employee))
+	if assignment.docstatus == 1:
+		frappe.throw(frappe._("Salary Structure Assignment {0} is already submitted").format(assignment.name))
+	frappe.db.set_value("Salary Structure Assignment", assignment.name, "income_tax_slab", income_tax_slab)
+	return {"assignment": assignment.name}
+
+
+@frappe.whitelist()
+def notify_employee_to_select_tax_regime(assignment: str) -> dict:
+	"""Email the employee on this Salary Structure Assignment a prompt to pick
+	their tax regime in the Tax Regime Selector page."""
+	ssa = frappe.db.get_value(
 		"Salary Structure Assignment",
-		{"employee": employee, "docstatus": 1},
-		"name",
-		order_by="from_date desc",
+		assignment,
+		["employee", "employee_name"],
+		as_dict=True,
 	)
-	if not name:
-		frappe.throw(frappe._("No active Salary Structure Assignment found for {0}").format(employee))
-	frappe.db.set_value("Salary Structure Assignment", name, "income_tax_slab", income_tax_slab)
-	return {"assignment": name}
+	if not ssa:
+		frappe.throw(frappe._("Salary Structure Assignment {0} not found").format(assignment))
+
+	emails = frappe.db.get_value(
+		"Employee",
+		ssa.employee,
+		["prefered_email", "company_email", "personal_email"],
+		as_dict=True,
+	)
+	recipient = emails and (emails.prefered_email or emails.company_email or emails.personal_email)
+	if not recipient:
+		frappe.throw(frappe._("No email address found for {0}").format(ssa.employee_name or ssa.employee))
+
+	link = frappe.utils.get_url("/app/tax-regime-selector")
+	frappe.sendmail(
+		recipients=[recipient],
+		subject=frappe._("Action required: Select your tax regime"),
+		message=frappe._(
+			"Dear {0},<br><br>"
+			"Please select your preferred income tax regime for the current payroll period "
+			"using the Tax Regime Selector:<br><br>"
+			'<a href="{1}">Open Tax Regime Selector</a><br><br>'
+			"Regards,<br>HR Team"
+		).format(ssa.employee_name or "", link),
+		reference_doctype="Salary Structure Assignment",
+		reference_name=assignment,
+	)
+	return {"sent": True, "email": recipient}
+
+
+@frappe.whitelist()
+def notify_employees_to_select_tax_regime(names) -> dict:
+	"""Bulk version of notify_employee_to_select_tax_regime for the SSA list view.
+	Notifies only draft assignments; skips submitted ones and those without an email."""
+	if isinstance(names, str):
+		names = frappe.parse_json(names)
+
+	sent = 0
+	skipped = 0
+	for name in names:
+		if frappe.db.get_value("Salary Structure Assignment", name, "docstatus") != 0:
+			skipped += 1
+			continue
+		try:
+			notify_employee_to_select_tax_regime(name)
+			sent += 1
+		except Exception:
+			skipped += 1
+
+	frappe.msgprint(
+		frappe._("Notified {0} employee(s). Skipped {1} (submitted or no email).").format(sent, skipped)
+	)
+	return {"sent": sent, "skipped": skipped}
 
 
 def get_employee_salary_data(employee):
-	name = frappe.db.get_value(
-		"Salary Structure Assignment",
-		{"employee": employee, "docstatus": 1},
-		"name",
-		order_by="from_date desc",
-	)
-	if not name:
-		frappe.throw(frappe._("No active Salary Structure Assignment found for {0}").format(employee))
+	assignment = get_latest_assignment(employee)
+	if not assignment:
+		frappe.throw(frappe._("No Salary Structure Assignment found for {0}").format(employee))
 
-	ssa = frappe.get_doc("Salary Structure Assignment", name)
+	ssa = frappe.get_doc("Salary Structure Assignment", assignment.name)
 	base = flt(ssa.base)
 	periods = PERIODS_PER_YEAR.get(
 		frappe.get_cached_value("Salary Structure", ssa.salary_structure, "payroll_frequency"), 12
@@ -194,6 +296,14 @@ def get_employee_salary_data(employee):
 	monthly_hra = find_amount(components.earnings, abbr="HRA")
 	monthly_lta = find_amount(components.earnings, abbr="LTA")
 	monthly_employer_nps = find_amount(components.employer_contributions, component_contains="NPS")
+
+	# Payable deduction components (e.g. EPF, employee NPS) so the UI can fuzzy-match
+	# them to exemption sub-categories and prefill the declaration table.
+	deductions = [
+		{"component": row.salary_component, "annual_amount": flt(row.default_amount) * periods}
+		for row in components.deductions
+		if not row.statistical_component and flt(row.default_amount) > 0
+	]
 
 	# Prefer the SSA's stored annual_gross_earning (computed on validate); fall back to
 	# the latest salary slip only for legacy assignments saved before the field existed.
@@ -218,6 +328,8 @@ def get_employee_salary_data(employee):
 		"has_hra": monthly_hra > 0,
 		"is_senior_citizen": check_senior_citizen(emp_dob),
 		"current_income_tax_slab": ssa.income_tax_slab,
+		"ssa_docstatus": assignment.docstatus,
+		"deductions": deductions,
 	}
 
 
