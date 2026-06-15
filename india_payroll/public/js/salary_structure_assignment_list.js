@@ -13,7 +13,7 @@ frappe.listview_settings["Salary Structure Assignment"] = {
 		)
 			return;
 
-		listview.page.add_menu_item(__("Notify Employees to Select Tax Regime"), () => {
+		listview.page.add_action_item(__("Notify Employees to Select Tax Regime"), () => {
 			if (!listview.get_checked_items().length) {
 				frappe.msgprint(__("Please select at least one Salary Structure Assignment"));
 				return;

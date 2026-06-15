@@ -50,41 +50,41 @@ def setup_if_missing() -> dict:
 def get_employee_details(employee: str) -> dict:
 	data = get_employee_salary_data(employee)
 
-	cats = frappe.get_all(
+	categories = frappe.get_all(
 		"Employee Tax Exemption Category",
 		fields=["name", "max_amount", "description"],
 	)
-	if not cats:
+	if not categories:
 		setup_tax_exemption_categories()
-		cats = frappe.get_all(
+		categories = frappe.get_all(
 			"Employee Tax Exemption Category",
 			fields=["name", "max_amount", "description"],
 		)
 
-	cats_by_name = {c.name: c for c in cats}
-	cats = [cats_by_name[name] for name in EXEMPTION_CATEGORIES if name in cats_by_name] + [
-		c for c in cats if c.name not in EXEMPTION_CATEGORIES
+	categories_by_name = {c.name: c for c in categories}
+	categories = [categories_by_name[name] for name in EXEMPTION_CATEGORIES if name in categories_by_name] + [
+		c for c in categories if c.name not in EXEMPTION_CATEGORIES
 	]
 
-	cat_list = []
-	for cat in cats:
+	category_list = []
+	for category in categories:
 		subs = frappe.get_all(
 			"Employee Tax Exemption Sub Category",
-			filters={"exemption_category": cat.name},
+			filters={"exemption_category": category.name},
 			fields=["name", "max_amount"],
 			order_by="name",
 		)
-		cat_list.append(
+		category_list.append(
 			{
-				"name": cat.name,
-				"max_amount": cat.max_amount,
-				"description": cat.description,
+				"name": category.name,
+				"max_amount": category.max_amount,
+				"description": category.description,
 				"sub_categories": [{"name": s.name, "max_amount": s.max_amount} for s in subs],
 			}
 		)
 
-	data["exemption_categories"] = cat_list
-	data["prefill_declarations"] = build_prefill_declarations(data.pop("deductions", []), cat_list)
+	data["exemption_categories"] = category_list
+	data["prefill_declarations"] = build_prefill_declarations(data.pop("deductions", []), category_list)
 
 	company = frappe.db.get_value("Employee", employee, "company")
 	today = frappe.utils.today()
@@ -101,7 +101,7 @@ def _normalize(name: str) -> str:
 	return re.sub(r"[^a-z0-9]", "", (name or "").lower())
 
 
-def build_prefill_declarations(deductions: list, cat_list: list) -> dict:
+def build_prefill_declarations(deductions: list, category_list: list) -> dict:
 	"""Fuzzy-match each payable salary deduction to an exemption sub-category by
 	normalized name and return {category: {sub_category: annual_amount}}.
 
@@ -110,9 +110,9 @@ def build_prefill_declarations(deductions: list, cat_list: list) -> dict:
 	with no matching sub-category (e.g. Professional Tax) are skipped.
 	"""
 	subs = [
-		(cat["name"], sub["name"], _normalize(sub["name"]))
-		for cat in cat_list
-		for sub in cat.get("sub_categories", [])
+		(category["name"], sub["name"], _normalize(sub["name"]))
+		for category in category_list
+		for sub in category.get("sub_categories", [])
 	]
 
 	prefill = {}

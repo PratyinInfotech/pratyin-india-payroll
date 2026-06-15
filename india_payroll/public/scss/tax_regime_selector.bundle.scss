@@ -1,0 +1,9 @@
+.regime-radio-card {
+	transition: box-shadow 0.1s;
+}
+.regime-radio-card:hover {
+	box-shadow: 0 0 0 1px var(--gray-400);
+}
+.section-header-row:hover {
+	background: var(--gray-50);
+}
