@@ -500,7 +500,7 @@ def add_tax_regime_selector_to_sidebar():
 			"label": "Tax Regime Selector",
 			"link_to": page_route,
 			"link_type": "Page",
-			"icon": "filter",
+			"icon": "chart-network",
 			"child": 0,
 			"collapsible": 1,
 			"indent": 0,
