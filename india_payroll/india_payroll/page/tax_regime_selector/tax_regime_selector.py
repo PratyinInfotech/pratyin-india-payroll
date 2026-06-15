@@ -246,7 +246,7 @@ def notify_employee_to_select_tax_regime(assignment: str) -> dict:
 
 
 @frappe.whitelist()
-def notify_employees_to_select_tax_regime(names) -> dict:
+def notify_employees_to_select_tax_regime(names: str | list[str]) -> dict:
 	"""Bulk version of notify_employee_to_select_tax_regime for the SSA list view.
 	Notifies only draft assignments; skips submitted ones and those without an email."""
 	if isinstance(names, str):
