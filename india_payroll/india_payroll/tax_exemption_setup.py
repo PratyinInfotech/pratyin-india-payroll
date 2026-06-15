@@ -136,7 +136,7 @@ EXEMPTION_CATEGORIES = {
 	},
 	"80EEA": {
 		"max_amount": 150000,
-		"description": "Additional home loan interest for affordable housing. Loan sanctioned between Apr 2019 and Mar 2022. Property stamp duty value must be ≤ ₹45 lakhs.",
+		"description": "Additional home loan interest for affordable housing. Loan sanctioned between Apr 2019 and Mar 2022. Property stamp duty value must not exceed ₹45 lakhs.",
 		"sub_categories": [
 			{"name": "Additional Interest on Affordable Housing Loan (80EEA)"},
 		],
