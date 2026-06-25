@@ -1,6 +1,8 @@
 import frappe
 from frappe.utils import flt
 
+from india_payroll.india_payroll.utils import get_slip_ssa_values
+
 ESI_EMPLOYEE_COMPONENT = "Employee State Insurance"
 
 # Combined ESI contribution rate deducted on the salary slip:
@@ -13,7 +15,7 @@ ESI_WAGE_CEILING_DISABILITY = 25_000
 
 def apply_esi(doc, method=None) -> None:
 	"""
-	Salary Slip — before_save hook.
+	Salary Slip regional deduction hook (see apply_regional_deductions).
 
 	Computes and injects ESI contributions when the employee's gross wages
 	fall within the prescribed ceiling.  If the employee is not eligible,
@@ -38,8 +40,8 @@ def apply_esi(doc, method=None) -> None:
 
 	gross_pay = flt(doc.gross_pay)
 
-	# Determine the applicable wage ceiling
-	is_disabled = frappe.db.get_value("Employee", doc.employee, "is_person_with_disability")
+	# Determine the applicable wage ceiling (PwD flag lives on the assignment)
+	is_disabled = get_slip_ssa_values(doc, ["is_person_with_disability"]).get("is_person_with_disability")
 	wage_ceiling = ESI_WAGE_CEILING_DISABILITY if is_disabled else ESI_WAGE_CEILING
 
 	if gross_pay > wage_ceiling:
@@ -53,15 +55,8 @@ def apply_esi(doc, method=None) -> None:
 
 
 def _remove_esi_components(doc) -> None:
-	"""
-	Remove the ESI employee component from the salary slip deductions.
-	Recalculates totals only if rows were actually removed.
-	"""
-	before = len(doc.deductions)
+	"""Remove the ESI employee component from the salary slip deductions."""
 	doc.deductions = [d for d in doc.deductions if d.salary_component != ESI_EMPLOYEE_COMPONENT]
-
-	if len(doc.deductions) != before:
-		_recalculate_totals(doc)
 
 
 def _update_esi_in_salary_slip(doc, esi: float) -> None:
@@ -83,15 +78,3 @@ def _update_esi_in_salary_slip(doc, esi: float) -> None:
 				"amount": esi,
 			},
 		)
-
-	_recalculate_totals(doc)
-
-
-def _recalculate_totals(doc) -> None:
-	"""Recompute total_deduction and net_pay after modifying deduction rows."""
-	doc.total_deduction = sum(flt(d.amount) for d in doc.deductions if not d.do_not_include_in_total)
-	# Loan repayment is tracked outside `deductions` (see Salary Slip.set_net_pay),
-	# so subtract it explicitly or net pay comes out too high.
-	doc.net_pay = flt(doc.gross_pay) - (flt(doc.total_deduction) + flt(doc.get("total_loan_repayment")))
-	if hasattr(doc, "rounded_total"):
-		doc.rounded_total = round(doc.net_pay)

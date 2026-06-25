@@ -129,6 +129,14 @@ class TestESI(HRMSTestSuite):
 
 		return employee, salary_slip
 
+	def _set_ssa(self, employee: str, values: dict) -> str:
+		"""Set India Payroll statutory config on the employee's salary structure assignment."""
+		ssa = frappe.db.get_value(
+			"Salary Structure Assignment", {"employee": employee}, "name", order_by="from_date desc"
+		)
+		frappe.db.set_value("Salary Structure Assignment", ssa, values)
+		return ssa
+
 	@HRMSTestSuite.change_settings("Payroll Settings", {"enable_esic": 1})
 	def test_eligible_employee_esi_applied(self):
 		"""
@@ -200,7 +208,7 @@ class TestESI(HRMSTestSuite):
 			"Test ESI Disability Ceiling Structure",
 			gross,
 		)
-		frappe.db.set_value("Employee", employee, "is_person_with_disability", 1)
+		self._set_ssa(employee, {"is_person_with_disability": 1})
 
 		salary_slip.insert()
 
@@ -226,7 +234,7 @@ class TestESI(HRMSTestSuite):
 			"Test ESI Disability Above Ceiling Structure",
 			gross,
 		)
-		frappe.db.set_value("Employee", employee, "is_person_with_disability", 1)
+		self._set_ssa(employee, {"is_person_with_disability": 1})
 
 		salary_slip.insert()
 
