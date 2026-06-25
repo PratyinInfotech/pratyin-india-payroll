@@ -260,7 +260,7 @@ def get_custom_fields():
 				"fieldname": "esic_card_no",
 				"label": "ESIC IP Number",
 				"fieldtype": "Data",
-				"insert_after": "india_payroll_esic_cb",
+				"insert_after": "india_payroll_cb",
 				"translatable": 0,
 				"description": "Employee's ESIC Insurance Number (IP Number) issued by ESIC",
 			},

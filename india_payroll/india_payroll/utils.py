@@ -18,6 +18,7 @@ def get_effective_ssa_values(
 			"company": company,
 			"salary_structure": salary_structure,
 			"from_date": ("<=", on_date),
+			"docstatus": 1,
 		},
 		fieldname=fields,
 		order_by="from_date desc",

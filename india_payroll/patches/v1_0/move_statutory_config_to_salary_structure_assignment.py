@@ -1,8 +1,6 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-# India Payroll statutory config fields relocated from the Employee master to the
-# Salary Structure Assignment, so they can be set per assignment and revised mid-year.
 MOVED_FIELDS = [
 	"is_person_with_disability",
 	"lwf_exempted",
@@ -14,9 +12,7 @@ MOVED_FIELDS = [
 	"vpf_amount",
 ]
 
-# Layout-only Employee custom fields that are orphaned once the statutory fields
-# above leave the master (the LWF section now has no children; the EPF column
-# break no longer separates anything).
+
 ORPHANED_EMPLOYEE_FIELDS = [
 	"india_payroll_lwf_section",
 	"india_payroll_epf_cb",
