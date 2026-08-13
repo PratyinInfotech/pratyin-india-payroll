@@ -27,8 +27,8 @@ required_apps = ["frappe/hrms"]
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/india_payroll/css/india_payroll.css"
-# app_include_js = "/assets/india_payroll/js/india_payroll.js"
+app_include_css = "/assets/india_payroll/css/custom_theme.css"
+app_include_js = "/assets/india_payroll/js/custom_theme_switcher.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/india_payroll/css/india_payroll.css"
@@ -118,6 +118,13 @@ before_uninstall = "india_payroll.uninstall.before_uninstall"
 # See frappe.core.notifications.get_notification_config
 
 # notification_config = "india_payroll.notifications.get_notification_config"
+
+# Boot Session
+# ------------
+# Strips links to Workspace.is_hidden workspaces from the merged Home sidebar
+# for every user, including Administrator (stock Frappe only hides them from
+# users without the Workspace Manager role).
+boot_session = ["india_payroll.india_payroll.boot.filter_hidden_workspaces"]
 
 # Permissions
 # -----------

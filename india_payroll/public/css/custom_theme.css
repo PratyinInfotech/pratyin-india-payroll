@@ -1,0 +1,278 @@
+/* Bootstrap-blue "Custom" desk theme — a 4th option alongside the stock Frappe
+   Light / Timeless Night / Automatic themes (added via custom_theme_switcher.js).
+   Everything here is scoped under [data-theme="custom"] so the three built-in
+   themes render exactly as shipped.
+
+   Colors are Bootstrap 4's actual default $primary tokens (#007bff and its
+   standard hover/active/focus shades), not an approximation — same values
+   Bootstrap itself compiles into .btn-primary, .form-control:focus, and
+   .alert-primary. The dark sidebar scale is a same-hue navy extension of that,
+   since Bootstrap doesn't ship a dark-panel palette of its own. */
+
+/* Layout fix, applies regardless of active theme: the collapsed sidebar is
+   only 50px wide and its scroll container's 6px scrollbar (unavoidable now
+   that the merged Home sidebar has 40+ sections) eats directly into that,
+   squeezing/clipping the icon column. Widen it slightly and thin the
+   scrollbar down so icons get their full width back. */
+.body-sidebar {
+	width: 58px;
+}
+.body-sidebar .body-sidebar-top {
+	scrollbar-width: thin;
+}
+.body-sidebar .body-sidebar-top::-webkit-scrollbar {
+	width: 4px;
+}
+
+[data-theme="custom"] {
+	/* Bootstrap 4 $primary and its real compiled shades */
+	--theme-primary: #007bff;
+	--theme-primary-hover: #0069d9;
+	--theme-primary-active: #0062cc;
+	--theme-focus-border: #80bdff;
+	--theme-focus-shadow: rgba(38, 143, 255, 0.5);
+	--theme-input-focus-shadow: rgba(0, 123, 255, 0.25);
+
+	/* Bootstrap's .alert-primary trio, reused as light background/border tints */
+	--theme-tint-text: #004085;
+	--theme-tint-bg: #cce5ff;
+	--theme-tint-border: #b8daff;
+	--theme-tint-subtle: #eaf4ff;
+
+	--primary: var(--theme-primary);
+	--primary-color: var(--theme-primary);
+	--brand-color: var(--theme-primary);
+	--btn-primary: var(--theme-primary);
+	--border-primary: var(--theme-primary);
+	--checkbox-color: var(--theme-primary);
+	--progress-bar-bg: var(--theme-primary);
+	--date-active-bg: var(--theme-primary);
+	--highlight-shadow: 1px 1px 10px var(--theme-tint-subtle), 0px 0px 4px var(--theme-primary);
+
+	--focus-default: 0 0 0 0.2rem var(--theme-input-focus-shadow);
+	--highlight-color: var(--theme-tint-subtle);
+
+	/* headings get a cool, navy-tinted ink instead of neutral near-black —
+	   body text stays plain gray on purpose, for readability at length */
+	--heading-color: #12233f;
+	--navbar-bg: var(--theme-primary);
+}
+
+/* Topbar: solid Bootstrap blue — the classic navbar-dark/bg-primary look —
+   instead of blending into the white content behind it. Text/icon variables
+   are re-pointed locally so search, bell, and any nav links stay legible. */
+[data-theme="custom"] .navbar {
+	background: var(--theme-primary);
+	border-bottom: none;
+	box-shadow: var(--shadow-sm);
+	--text-color: #ffffff;
+	--icon-stroke: #ffffff;
+	--heading-color: #ffffff;
+}
+[data-theme="custom"] .navbar a,
+[data-theme="custom"] .navbar .navbar-nav .nav-link {
+	color: #ffffff;
+}
+[data-theme="custom"] .navbar .vertical-bar {
+	border-color: var(--theme-focus-border);
+}
+
+/* Page header (breadcrumb / view switcher / primary action row): kept white so
+   its many bordered sub-controls don't clash, but given a crisp blue edge and
+   a soft lift so it still reads as "the" bar at the top of every page. */
+[data-theme="custom"] .page-head {
+	border-bottom: 2px solid var(--theme-tint-bg);
+	box-shadow: 0 2px 6px -2px rgba(0, 123, 255, 0.15);
+}
+
+/* Headings pick up the tinted ink color and a touch more weight for clearer
+   hierarchy against the plain-gray body copy. */
+[data-theme="custom"] h1,
+[data-theme="custom"] h2,
+[data-theme="custom"] h3,
+[data-theme="custom"] h4,
+[data-theme="custom"] .page-title .title-text,
+[data-theme="custom"] .form-section .section-head {
+	color: var(--heading-color);
+	font-weight: var(--weight-semibold);
+}
+
+/* Cards and workspace widgets: the stock theme deliberately ships flat
+   (box-shadow: none, plain border) — add elevation back so panels separate
+   from the page instead of reading as a wireframe. */
+[data-theme="custom"] .frappe-card {
+	box-shadow: var(--shadow-md);
+	border-color: var(--theme-tint-bg);
+}
+[data-theme="custom"] .widget {
+	box-shadow: var(--shadow-sm);
+	border: 1px solid var(--theme-tint-bg);
+	transition:
+		box-shadow 0.15s ease,
+		transform 0.15s ease;
+}
+[data-theme="custom"] .widget:hover {
+	box-shadow: var(--shadow-md);
+	transform: translateY(-1px);
+}
+[data-theme="custom"] .modal-content {
+	box-shadow: var(--shadow-2xl);
+}
+
+/* List view column headers: tinted background, bolder caption-style type
+   instead of body-sized regular text, so header vs. data rows are unmistakable. */
+[data-theme="custom"] .list-row-head {
+	background: var(--theme-tint-subtle);
+	border-bottom: 2px solid var(--theme-tint-border);
+	border-radius: var(--border-radius) var(--border-radius) 0 0;
+	color: var(--theme-tint-text);
+	font-size: 11px;
+	font-weight: var(--weight-semibold);
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+/* Report/grid view (frappe-datatable) headers get the same treatment. */
+[data-theme="custom"] .datatable .dt-header .dt-row-header,
+[data-theme="custom"] .datatable .dt-header .dt-cell--header .dt-cell__content {
+	background-color: var(--theme-tint-subtle);
+	color: var(--theme-tint-text);
+	font-size: 11px;
+	font-weight: var(--weight-semibold);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+/* Sidebar panel: dark navy — a same-hue, darker extension of the Bootstrap blue
+   used everywhere else, since Bootstrap itself has no dark-panel palette.
+   Everything the panel draws (text, icons, badges, scrollbar, header logo chip)
+   reads off these variables, so they all need re-pointing together — swapping
+   only the background would leave dark-on-dark text. */
+[data-theme="custom"] .body-sidebar {
+	color-scheme: dark;
+
+	--text-color: #ffffff;
+	--heading-color: #ffffff;
+	--text-muted: #ffffff;
+	--text-light: #ffffff;
+	--icon-stroke: #ffffff;
+	--ink-gray-4: #ffffff;
+	--ink-gray-5: #ffffff;
+	--ink-gray-6: #ffffff;
+	--ink-gray-7: #ffffff;
+	--ink-gray-8: #ffffff;
+	--ink-gray-9: #ffffff;
+	--placeholder-color: #ffffff;
+
+	--bg-color: #0b2e4f;
+	--fg-color: #0b2e4f;
+	--card-bg: #0b2e4f;
+	--control-bg: #123f68;
+	--subtle-fg: #123f68;
+	--subtle-accent: #123f68;
+	--fg-hover-color: #123f68;
+	--border-color: #123f68;
+	--surface-gray-1: #123f68;
+	--surface-gray-2: #123f68;
+	--surface-gray-3: #1a5081;
+
+	--btn-default-bg: #123f68;
+	--btn-default-hover-bg: #1a5081;
+
+	--surface-menu-bar: #0b2e4f;
+	--sidebar-border-color: #123f68;
+	--sidebar-hover-color: #123f68;
+	--sidebar-active-color: #1a5081;
+	--sidebar-select-color: #1a5081;
+
+	--scrollbar-thumb-color: #1a5081;
+	--scrollbar-track-color: #123f68;
+}
+
+/* Active/selected sidebar item: icon + label pick up a bright accent, not just a
+   background tint, so the current page reads clearly against the dark panel. */
+[data-theme="custom"] .active-sidebar .item-anchor,
+[data-theme="custom"] .active-sidebar .sidebar-item-label,
+[data-theme="custom"] .active-sidebar .sidebar-item-icon,
+[data-theme="custom"] .standard-sidebar-item.selected > a {
+	color: #ffffff;
+}
+
+/* List view row titles: give the primary clickable link brand color instead of
+   plain body text, so tables feel like part of the same themed product. */
+[data-theme="custom"] .list-subject a {
+	color: var(--theme-primary);
+	font-weight: 500;
+}
+[data-theme="custom"] .list-subject a:hover {
+	color: var(--theme-primary-hover);
+	text-decoration: underline;
+}
+
+/* Bootstrap's real .form-control:focus values — not an approximation. */
+[data-theme="custom"] .form-control:focus {
+	border-color: var(--theme-focus-border);
+	box-shadow: 0 0 0 0.2rem var(--theme-input-focus-shadow);
+}
+
+/* Bootstrap's .btn-primary / .text-primary / .border-primary / .bg-primary /
+   .badge-primary / .btn-outline-primary are compiled with a literal hex, not
+   var(--primary), so CSS-variable overrides above don't reach them — they need
+   direct overrides. Values below match Bootstrap 4's own compiled output. */
+[data-theme="custom"] .btn-primary,
+[data-theme="custom"] div#driver-popover-item .driver-popover-footer button.driver-next-btn {
+	background-color: var(--theme-primary);
+	border-color: var(--theme-primary);
+}
+[data-theme="custom"] .btn-primary:hover,
+[data-theme="custom"] div#driver-popover-item .driver-popover-footer button.driver-next-btn:hover {
+	background-color: var(--theme-primary-hover);
+	border-color: var(--theme-primary-active);
+}
+[data-theme="custom"] .btn-primary:focus,
+[data-theme="custom"] div#driver-popover-item .driver-popover-footer button.driver-next-btn:focus,
+[data-theme="custom"] .btn-primary.focus,
+[data-theme="custom"] div#driver-popover-item .driver-popover-footer button.focus.driver-next-btn,
+[data-theme="custom"] .btn-primary:not(:disabled):not(.disabled):active,
+[data-theme="custom"] .btn-primary:not(:disabled):not(.disabled).active {
+	background-color: var(--theme-primary-active);
+	border-color: var(--theme-primary-active);
+}
+[data-theme="custom"] .btn-primary:focus,
+[data-theme="custom"] .btn-primary.focus {
+	box-shadow: 0 0 0 0.2rem var(--theme-focus-shadow);
+}
+
+[data-theme="custom"] .btn-outline-primary {
+	color: var(--theme-primary);
+	border-color: var(--theme-primary);
+}
+[data-theme="custom"] .btn-outline-primary:hover {
+	color: #fff;
+	background-color: var(--theme-primary);
+	border-color: var(--theme-primary);
+}
+[data-theme="custom"] .btn-outline-primary:focus,
+[data-theme="custom"] .btn-outline-primary.focus {
+	box-shadow: 0 0 0 0.2rem var(--theme-focus-shadow);
+}
+
+[data-theme="custom"] .text-primary {
+	color: var(--theme-primary) !important;
+}
+[data-theme="custom"] .border-primary {
+	border-color: var(--theme-primary) !important;
+}
+[data-theme="custom"] .bg-primary {
+	background-color: var(--theme-primary) !important;
+}
+[data-theme="custom"] .badge-primary {
+	color: #fff;
+	background-color: var(--theme-primary);
+}
+
+/* Theme-switcher dialog: fit a 4th card without leaving the grid lopsided.
+   Layout-only, so it's safe to apply regardless of which theme is active. */
+.modal-body .theme-grid {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
