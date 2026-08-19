@@ -278,3 +278,11 @@ require_type_annotated_api_methods = True
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
+
+# Fixtures
+# --------
+# Pratyin HRMS branding (Website Settings.app_name / app_logo) lives only in the
+# database by default; export it so `bench migrate` carries it to every site.
+fixtures = [
+	{"dt": "Website Settings", "filters": [["name", "=", "Website Settings"]]},
+]

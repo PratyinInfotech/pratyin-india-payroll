@@ -22,11 +22,9 @@ This deployment also carries one customization inside ERPNext itself (the merged
 | App | Repo | Branch | Notes |
 |---|---|---|---|
 | `frappe` | https://github.com/frappe/frappe (stock, unforked) | `version-16` | |
-| `erpnext` | `<your-github-username>/erpnext` (fork) | `version-16` | carries `erpnext/workspace_sidebar/home.json` |
+| `erpnext` | https://github.com/PratyinInfotech/pratyin-erpnext (fork) | `version-16` | carries `erpnext/workspace_sidebar/home.json` |
 | `hrms` | https://github.com/frappe/hrms (stock, unforked) | `version-16` | |
-| `india_payroll` | `<your-github-username>/india_payroll` (this repo) | `version-16` | |
-
-Replace `<your-github-username>` below with wherever you push these two forks.
+| `india_payroll` | https://github.com/PratyinInfotech/pratyin-india-payroll (this repo) | `version-16` | |
 
 ---
 
@@ -57,8 +55,8 @@ bench get-app hrms --branch version-16
 # bench get-app erpnext --branch version-16
 
 # 4. Get the two customized forks instead of stock erpnext/india_payroll
-bench get-app erpnext https://github.com/<your-github-username>/erpnext.git --branch version-16 --overwrite
-bench get-app india_payroll https://github.com/<your-github-username>/india_payroll.git --branch version-16
+bench get-app erpnext https://github.com/PratyinInfotech/pratyin-erpnext.git --branch version-16 --overwrite
+bench get-app india_payroll https://github.com/PratyinInfotech/pratyin-india-payroll.git --branch version-16
 
 # 5. Create the site
 bench new-site hr.local --db-type mariadb
@@ -88,60 +86,9 @@ Log in as Administrator — you should land directly on the merged module sideba
 
 ### Production deployment
 
-This covers a single-server deployment with `bench`'s built-in production setup (supervisor + nginx). For containerized/multi-server deployment, see the [Frappe Docker](https://github.com/frappe/frappe_docker) alternative at the end.
-
-```bash
-# 1. On the production server, repeat the "New developer setup" steps above through
-#    step 6 (get-app + new-site + install-app), using a production-appropriate site
-#    name (e.g. hr.yourcompany.com) and a strong Administrator/DB password.
-
-# 2. Set the site as default and turn off maintenance/developer mode
-bench use hr.yourcompany.com
-bench --site hr.yourcompany.com set-config developer_mode 0
-bench --site hr.yourcompany.com set-config maintenance_mode 0
-
-# 3. Generate supervisor + nginx configs and wire them up (run as a sudo-capable user)
-sudo bench setup production $(whoami)
-
-# 4. Enable HTTPS (Let's Encrypt) — requires the domain's DNS already pointed at this server
-sudo bench setup lets-encrypt hr.yourcompany.com
-
-# 5. Restart everything cleanly after any deploy
-sudo supervisorctl restart all
-sudo bench restart   # if using the systemd path instead of supervisor
-```
-
-**Deploying updates later:**
-
-```bash
-cd hr-bench
-bench --site hr.yourcompany.com set-maintenance-mode on
-bench update --pull --apps india_payroll erpnext frappe hrms   # or `bench update` for everything
-bench --site hr.yourcompany.com migrate
-bench --site hr.yourcompany.com set-maintenance-mode off
-sudo supervisorctl restart all
-```
-
-**Backups** (schedule this via cron):
-
-```bash
-bench --site hr.yourcompany.com backup --with-files
-```
-
-**Alternative: Frappe Docker**
-
-If you'd rather run this as containers, use [frappe_docker](https://github.com/frappe/frappe_docker)'s custom-image build with an `apps.json` pointing at the two forks:
-
-```json
-[
-  { "url": "https://github.com/frappe/frappe", "branch": "version-16" },
-  { "url": "https://github.com/<your-github-username>/erpnext.git", "branch": "version-16" },
-  { "url": "https://github.com/frappe/hrms", "branch": "version-16" },
-  { "url": "https://github.com/<your-github-username>/india_payroll.git", "branch": "version-16" }
-]
-```
-
-Follow frappe_docker's "Build Your Own Images" guide, base64-encode this `apps.json` into `APPS_JSON_BASE64`, and build.
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the full step-by-step guide — covers server prep, building
+a custom Docker image from the two forks above via [frappe_docker](https://github.com/frappe/frappe_docker),
+deploying, updates, and backups.
 
 ---
 
