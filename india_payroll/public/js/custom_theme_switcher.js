@@ -73,6 +73,26 @@
 	};
 })();
 
+// The breadcrumb "home" icon (top-left, before "/ <workspace>") links to
+// bare /desk — the exact same frappe.set_route("/desk") bug as the "Desktop"
+// menu item above: as an in-app SPA navigation it re-enters Workspace's own
+// fallback (get_page_to_show()), landing on whatever workspace localStorage
+// remembers as "last visited" (e.g. Stock) instead of Home, surfacing that
+// workspace's own onboarding panel. frappe.breadcrumbs.clear() rebuilds this
+// link from scratch on every route change, so intercept its click there each
+// time rather than patching a single element once.
+(function () {
+	const original_clear = frappe.breadcrumbs.clear;
+	frappe.breadcrumbs.clear = function () {
+		original_clear.call(this);
+		this.$breadcrumbs.find('a[href="/desk"]').on("click", function (e) {
+			e.preventDefault();
+			frappe.route_flags.replace_route = true;
+			frappe.set_route("home");
+		});
+	};
+})();
+
 // One-time cleanup: while reviewing the newly-merged "Home" sidebar (40+
 // module sections, all meant to start collapsed via keep_closed), a few
 // sections got expanded by hand — Frappe remembers per-section open/closed
