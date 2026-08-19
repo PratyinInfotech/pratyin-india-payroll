@@ -24,6 +24,30 @@
 	width: 4px;
 }
 
+/* Module section headers + their nested items, applies regardless of active
+   theme: with 39 collapsible module sections in the merged Home sidebar,
+   headers ("Stock", "HR Setup", ...) read as plain text identical in weight
+   to any other row, and their children have no visual link back to which
+   section they belong to once a few sections are open at once. Give headers
+   a subtle tinted background so they read as group boundaries, and give each
+   section's nested-items block a left guide line connecting them back to
+   their header, tree-view style. Uses Frappe's own theme tokens throughout
+   so it adapts automatically across Light / Dark / Custom. */
+.body-sidebar .item-anchor.section-break {
+	background: color-mix(in srgb, var(--text-color) 6%, transparent);
+	border-radius: var(--border-radius);
+}
+.body-sidebar .item-anchor.section-break .sidebar-item-label {
+	font-size: var(--text-base);
+	font-weight: var(--weight-medium);
+	letter-spacing: 0.01em;
+}
+.body-sidebar .sidebar-item-container.section-item > .nested-container {
+	margin-left: 10px;
+	padding-left: 8px;
+	border-left: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
 [data-theme="custom"] {
 	/* Bootstrap 4 $primary and its real compiled shades */
 	--theme-primary: #007bff;
