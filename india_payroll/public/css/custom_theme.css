@@ -32,20 +32,72 @@
    a subtle tinted background so they read as group boundaries, and give each
    section's nested-items block a left guide line connecting them back to
    their header, tree-view style. Uses Frappe's own theme tokens throughout
-   so it adapts automatically across Light / Dark / Custom. */
-.body-sidebar .item-anchor.section-break {
+   so it adapts automatically across Light / Dark / Custom.
+
+   Scoped to .body-sidebar-container.expanded only: when the sidebar
+   collapses to the icon-only rail, sidebar_item.js hides every section
+   header and force-opens all children into one flat icon column (that's
+   stock Frappe behavior, not something this app changes) — the guide-line
+   margin/padding/border below has no room in a 58px rail and, unscoped,
+   was what broke the collapsed icon column into stray tick marks. */
+.body-sidebar-container.expanded .item-anchor.section-break {
 	background: color-mix(in srgb, var(--text-color) 6%, transparent);
 	border-radius: var(--border-radius);
 }
-.body-sidebar .item-anchor.section-break .sidebar-item-label {
+.body-sidebar-container.expanded .item-anchor.section-break .sidebar-item-label {
 	font-size: var(--text-base);
 	font-weight: var(--weight-medium);
 	letter-spacing: 0.01em;
 }
-.body-sidebar .sidebar-item-container.section-item > .nested-container {
+.body-sidebar-container.expanded .sidebar-item-container.section-item > .nested-container {
 	margin-left: 10px;
 	padding-left: 8px;
 	border-left: 1px solid color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+/* Collapsed rail, every item (not just module/section rows): stock relies
+   on flex-shrink + text-overflow:ellipsis to squeeze labels down to nothing
+   in the narrow rail, which isn't fully reliable — a stray letter or two can
+   still poke through depending on label length/font metrics. Force labels
+   (and any trailing control, e.g. a section's collapse chevron) hidden
+   outright instead of trusting flex clipping, app-wide. */
+.body-sidebar-container:not(.expanded) .sidebar-item-label,
+.body-sidebar-container:not(.expanded) .sidebar-item-control {
+	display: none;
+}
+
+/* .section-break rows specifically also carry a stock 7px left margin +
+   forced gap:0 (sidebar.scss line ~344) — authored assuming these rows
+   would always be hidden entirely in collapsed mode (stock JS used to add
+   .hidden to them there), so it was never made narrow-rail-safe. Now that
+   the fix above keeps them visible instead of hidden, that leftover margin
+   knocked their icons off-center from every other item's. Force-match
+   regular item layout exactly. */
+.body-sidebar-container:not(.expanded) .item-anchor.section-break {
+	margin-left: 0;
+	gap: 2px;
+	justify-content: center;
+}
+
+/* Collapsed-sidebar hover flyout (see custom_theme_switcher.js): a module
+   icon's nested items, rendered in a floating panel next to the icon rail
+   instead of flattened into it. Capped height + scroll since some sections
+   run 40-60+ items deep (Selling, Stock, CRM) — an uncapped panel would run
+   off the bottom of the screen on smaller displays. */
+.india-payroll-sidebar-flyout {
+	z-index: 1030;
+	max-height: 70vh;
+	min-width: 220px;
+	max-width: 320px;
+	overflow-y: auto;
+	background: var(--fg-color);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius);
+	box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.25));
+	padding: 6px;
+}
+.india-payroll-sidebar-flyout-list .sidebar-item-container {
+	width: 100%;
 }
 
 [data-theme="custom"] {

@@ -156,3 +156,103 @@
 		);
 	};
 })();
+
+// Collapsed sidebar rail: stock Frappe hides every module section header and
+// force-opens its children into one flat icon column once the sidebar
+// collapses — fine for a handful of items, unworkable at this app's scale
+// (645 items across 39 merged module sections, several 40-60+ items deep).
+// Keep only the module-level icon visible when collapsed (now that the fix
+// above gives every section header one), keep its children closed, and show
+// them in a hover flyout instead of flattening into the icon column.
+// Standalone top-level items with no nested_items (Shortcuts, Automation,
+// ...) are untouched — they still click straight through as before.
+(function () {
+	const FLYOUT_CLASS = "india-payroll-sidebar-flyout";
+	let $flyout = null;
+	let hide_timer = null;
+
+	function clear_hide_timer() {
+		if (hide_timer) {
+			clearTimeout(hide_timer);
+			hide_timer = null;
+		}
+	}
+
+	function hide_flyout() {
+		clear_hide_timer();
+		if ($flyout) {
+			$flyout.remove();
+			$flyout = null;
+		}
+	}
+
+	function schedule_hide_flyout() {
+		clear_hide_timer();
+		hide_timer = setTimeout(hide_flyout, 200);
+	}
+
+	function show_flyout(anchor_el, nested_items) {
+		hide_flyout();
+		if (!anchor_el || !nested_items || !nested_items.length) return;
+
+		$flyout = $(`<div class="${FLYOUT_CLASS}"></div>`).appendTo("body");
+		$flyout.on("mouseenter", clear_hide_timer);
+		$flyout.on("mouseleave", schedule_hide_flyout);
+
+		const $list = $(`<div class="${FLYOUT_CLASS}-list"></div>`).appendTo($flyout);
+		nested_items.forEach((item) => {
+			frappe.app.sidebar.make_sidebar_item({ container: $list, item });
+		});
+		$list.find("a.item-anchor").on("click", hide_flyout);
+
+		const rect = anchor_el.getBoundingClientRect();
+		const is_rtl = frappe.utils.is_rtl();
+		$flyout.css({
+			position: "fixed",
+			[is_rtl ? "right" : "left"]: rect.right + 6 + "px",
+			top: rect.top + "px",
+		});
+		// re-clamp against the viewport bottom now that content is in and
+		// outerHeight() is measurable (it was 0 pre-append)
+		const max_top = window.innerHeight - $flyout.outerHeight() - 8;
+		$flyout.css("top", Math.max(8, Math.min(rect.top, max_top)) + "px");
+	}
+
+	const original_make = frappe.ui.sidebar_item.TypeSectionBreak.prototype.make;
+	frappe.ui.sidebar_item.TypeSectionBreak.prototype.make = function () {
+		original_make.call(this);
+		if (!this.wrapper || !this.nested_items || !this.nested_items.length) return;
+
+		const me = this;
+		this.wrapper.on("mouseenter", function () {
+			if (frappe.app.sidebar.sidebar_expanded) return;
+			clear_hide_timer();
+			show_flyout(me.wrapper.find(".item-anchor.section-break")[0], me.nested_items);
+		});
+		this.wrapper.on("mouseleave", schedule_hide_flyout);
+	};
+
+	// Replaces (not wraps) the stock listener: the stock version hides
+	// .section-break entirely on collapse and force-opens children via
+	// me.open() — both of which this fix intentionally undoes. The
+	// expanding branch is left functionally identical to stock.
+	frappe.ui.sidebar_item.TypeSectionBreak.prototype.toggle_on_collapse = function () {
+		const me = this;
+		this.old_state;
+		$(document).on("sidebar-expand", function (event, expand) {
+			if (expand.sidebar_expand) {
+				$(me.wrapper.find(".section-break")).removeClass("hidden");
+				$(me.wrapper.find(".divider")).addClass("hidden");
+				if (me.old_state !== undefined) {
+					me.collapsed = me.old_state;
+					me.toggle();
+				}
+			} else {
+				hide_flyout();
+				$(me.wrapper.find(".divider")).addClass("hidden");
+				me.old_state = me.collapsed;
+				me.close();
+			}
+		});
+	};
+})();
