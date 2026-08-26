@@ -19,9 +19,9 @@ from frappe.modules.utils import create_directory_on_app_path
 # Modules verified (by grepping every Link field in hrms + india_payroll) to
 # have zero code dependency from HR/Payroll functionality — safe to hide
 # outright for a pure HRMS deployment (e.g. a bank or IT services company
-# with no use for Stock/Manufacturing/Selling/CRM/etc.). Assets, Projects,
-# and Buying are deliberately left out of this default list since they're
-# used by optional HR features (asset return tracking, project-linked
+# with no use for Stock/Manufacturing/Selling/CRM/Website/etc.). Assets,
+# Projects, and Buying are deliberately left out of this default list since
+# they're used by optional HR features (asset return tracking, project-linked
 # expenses, training vendor selection) — pass them explicitly if unwanted.
 DEFAULT_MODULES_TO_HIDE = [
 	"Stock",
@@ -39,6 +39,7 @@ DEFAULT_MODULES_TO_HIDE = [
 	"Budget",
 	"Subcontracting",
 	"ERPNext Settings",
+	"Website",
 ]
 
 
