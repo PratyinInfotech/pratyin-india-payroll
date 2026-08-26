@@ -3,15 +3,24 @@
 // themes. Selection is remembered in localStorage rather than the User's
 // `desk_theme` field, since that field's options and the server-side
 // `switch_theme` whitelist only accept Light/Dark/Automatic.
+//
+// Custom is the deployment default: it applies on load for every browser
+// unless that browser has explicitly picked Light/Dark/Automatic from the
+// Switch Theme dialog before (OPT_OUT_KEY). Picking "Custom" again clears
+// the opt-out so it goes back to being automatic. The legacy opt-in key is
+// still honored so anyone who already turned it on before this default
+// flipped keeps seeing it without any change on their end.
 (function () {
-	const STORAGE_KEY = "india_payroll_custom_theme_enabled";
+	const LEGACY_OPT_IN_KEY = "india_payroll_custom_theme_enabled";
+	const OPT_OUT_KEY = "india_payroll_custom_theme_disabled";
 
 	function apply_custom_theme() {
 		document.documentElement.setAttribute("data-theme-mode", "custom");
 		document.documentElement.setAttribute("data-theme", "custom");
 	}
 
-	if (localStorage.getItem(STORAGE_KEY) === "1") {
+	const opted_out = localStorage.getItem(OPT_OUT_KEY) === "1";
+	if (!opted_out || localStorage.getItem(LEGACY_OPT_IN_KEY) === "1") {
 		apply_custom_theme();
 	}
 
@@ -30,13 +39,15 @@
 	const original_toggle_theme = frappe.ui.ThemeSwitcher.prototype.toggle_theme;
 	frappe.ui.ThemeSwitcher.prototype.toggle_theme = function (theme) {
 		if (theme === "custom") {
-			localStorage.setItem(STORAGE_KEY, "1");
+			localStorage.removeItem(OPT_OUT_KEY);
+			localStorage.removeItem(LEGACY_OPT_IN_KEY);
 			this.current_theme = "custom";
 			apply_custom_theme();
 			frappe.show_alert(__("Theme Changed"), 3);
 			return;
 		}
-		localStorage.removeItem(STORAGE_KEY);
+		localStorage.setItem(OPT_OUT_KEY, "1");
+		localStorage.removeItem(LEGACY_OPT_IN_KEY);
 		return original_toggle_theme.call(this, theme);
 	};
 })();
