@@ -77,6 +77,13 @@
 						frappe.set_route("home");
 					};
 				}
+
+				// This app's own "Website" sidebar section (hidden via
+				// customize_sidebar.hide_modules) already covers Web Page/Web
+				// Form/etc for HRMS-only deployments; this dropdown item is a
+				// separate, hardcoded stock entry that just opens the public
+				// site root and isn't reachable from that script.
+				this.dropdown_items = this.dropdown_items.filter((item) => item.name !== "website");
 			} catch (e) {
 				console.error(e);
 			}
