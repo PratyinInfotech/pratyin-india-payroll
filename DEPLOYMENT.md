@@ -113,6 +113,40 @@ docker compose exec backend bench --site your-server-ip set-config developer_mod
 docker compose exec backend bench --site your-server-ip enable-scheduler
 ```
 
+**Mandatory — force-sync the merged Home sidebar.** The automatic fixture sync that runs as
+part of `install-app erpnext` can end up incomplete on a fresh site (large insert, modest VPS
+resources) with no visible error, leaving the sidebar empty or partial. Don't rely on it —
+always force a full reset from the shipped `home.json` right after the three `install-app` calls
+above:
+
+```bash
+docker compose exec backend bench --site your-server-ip execute \
+  india_payroll.india_payroll.scripts.customize_sidebar.restore_modules
+```
+
+Then verify it actually landed before moving on:
+
+```bash
+docker compose exec backend bench --site your-server-ip console
+>>> frappe.db.count("Workspace Sidebar Item", {"parent": "Home"})
+```
+
+This should print `645`. If it's 0 or noticeably lower even after `restore_modules`, the install
+itself failed partway — check `docker compose logs backend` around the `install-app erpnext`
+timestamp for a traceback (often a MariaDB `max_allowed_packet` or memory limit on small VPS
+instances) before continuing.
+
+**Mandatory — land on `/desk/home` after login, not bare `/desk`.** With more than one desk-scoped
+app installed (erpnext + hrms), Frappe's post-login redirect (`frappe.apps.get_default_path()`)
+hardcodes the bare `/desk` route rather than any individual app's own route — this is stock
+framework behavior, not something `migrate` or the sidebar fix above touches. `india_payroll`'s
+`add_to_apps_screen` hook advertises `/desk/home` as its route; set it as the site's default app so
+that route is actually used:
+
+```bash
+docker compose exec backend bench --site your-server-ip set-value "System Settings" default_app india_payroll
+```
+
 ## 5. Open the firewall and access it
 
 ```bash
@@ -138,6 +172,16 @@ cd frappe_docker
 # re-run the docker build from step 2 (same command, same tag or a new one)
 docker compose up -d   # recreates containers on the new image
 docker compose exec backend bench --site your-server-ip migrate
+```
+
+If the update touched sidebar content (`home.json` or any file under `workspace_sidebar/`), follow
+with the same force-sync used on a fresh install — `bench migrate` intentionally won't overwrite a
+Workspace Sidebar it considers already customized once the DB row exists, so new sidebar items
+never reach a live site through `migrate` alone:
+
+```bash
+docker compose exec backend bench --site your-server-ip execute \
+  india_payroll.india_payroll.scripts.customize_sidebar.restore_modules
 ```
 
 ## Backups
