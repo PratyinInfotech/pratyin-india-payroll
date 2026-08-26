@@ -136,15 +136,32 @@ itself failed partway — check `docker compose logs backend` around the `instal
 timestamp for a traceback (often a MariaDB `max_allowed_packet` or memory limit on small VPS
 instances) before continuing.
 
-**Mandatory — land on `/desk/home` after login, not bare `/desk`.** With more than one desk-scoped
-app installed (erpnext + hrms), Frappe's post-login redirect (`frappe.apps.get_default_path()`)
-hardcodes the bare `/desk` route rather than any individual app's own route — this is stock
-framework behavior, not something `migrate` or the sidebar fix above touches. `india_payroll`'s
-`add_to_apps_screen` hook advertises `/desk/home` as its route; set it as the site's default app so
-that route is actually used:
+**Mandatory — land on `/desk/home` after login, not bare `/desk`.** The desk login form logs in via
+an AJAX call and navigates to whatever `home_page` the login response carries
+(`apps/frappe/frappe/templates/includes/login/login.js`). For a System User that value comes from
+`frappe.website.utils.get_home_page()`, not from `default_app`/`get_default_path()` (that pair only
+governs Website User logins). `get_home_page()` falls back to the bare `"desk"` route unless
+something resolves it first, in this priority order:
+1. `User.default_workspace` on that specific user (wins over everything below, if set)
+2. the `role_home_page` hook, keyed by role
+
+`india_payroll` sets `role_home_page = {"All": "desk/home"}` (`"All"` is a role every user has), so
+this applies automatically on install — no extra command needed here, unlike the sidebar fix above.
+It only silently loses if some user's `default_workspace` is already set to something else, which
+takes priority — check with:
 
 ```bash
-docker compose exec backend bench --site your-server-ip set-value "System Settings" default_app india_payroll
+docker compose exec backend bench --site your-server-ip execute frappe.db.get_value --args "['User', 'Administrator', 'default_workspace']"
+```
+If that prints anything other than empty/`Home`, either clear it or set it to `Home` explicitly:
+```bash
+docker compose exec backend bench --site your-server-ip execute frappe.db.set_value --args "['User', 'Administrator', 'default_workspace', 'Home']"
+```
+
+Either way, finish with a cache clear — `get_home_page()` results are cached per-user in Redis and
+won't reflect a hooks.py change (or a `default_workspace` edit) until cleared:
+```bash
+docker compose exec backend bench --site your-server-ip clear-cache
 ```
 
 ## 5. Open the firewall and access it

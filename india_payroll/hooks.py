@@ -12,19 +12,16 @@ app_license = "gpl-3.0"
 
 required_apps = ["frappe/hrms"]
 
-# Each item in the list will be shown as an app in the apps page.
-# Also doubles as the resolved route for System Settings/User "Default App" —
-# set to the merged Home workspace so login lands on /desk/home instead of
-# frappe.apps.get_default_path() falling back to the bare "/desk" it returns
-# whenever more than one installed app is desk-scoped (erpnext + hrms here).
-add_to_apps_screen = [
-	{
-		"name": "india_payroll",
-		"logo": "/assets/india_payroll/images/pratyin-logo.png",
-		"title": "Pratyin HRMS",
-		"route": "/desk/home",
-	}
-]
+# Each item in the list will be shown as an app in the apps page
+# add_to_apps_screen = [
+# 	{
+# 		"name": "india_payroll",
+# 		"logo": "/assets/india_payroll/logo.png",
+# 		"title": "India Payroll",
+# 		"route": "/india_payroll",
+# 		"has_permission": "india_payroll.api.permission.has_app_permission"
+# 	}
+# ]
 
 # Includes in <head>
 # ------------------
@@ -64,10 +61,12 @@ doctype_list_js = {"Salary Structure Assignment": "public/js/salary_structure_as
 # application home page (will override Website Settings)
 # home_page = "login"
 
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
+# Post-login landing page for every user (matches "All", a role every user
+# has). Only takes effect for System Users if they have no per-user
+# User.default_workspace set — that field wins first when present (see
+# frappe.website.utils.get_home_page). Without this, System Users land on
+# the bare "/desk" fallback instead of the merged Home sidebar.
+role_home_page = {"All": "desk/home"}
 
 # Generators
 # ----------
