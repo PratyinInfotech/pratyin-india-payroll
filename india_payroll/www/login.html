@@ -7,104 +7,119 @@
 {% block head_include %}
 {{ include_style('login.bundle.css') }}
 <style>
-/* ── hard reset ── */
+/* ── global reset ── */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; height: 100%; }
-body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.navbar, .page-header, footer.web-footer { display: none !important; }
+.container, .page-content { padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+#main-wrapper, .main-section-with-sidebar { padding: 0 !important; }
 
-/* hide default frappe chrome */
-.navbar, .page-header, footer { display: none !important; }
-.container, .page-content { padding: 0 !important; max-width: 100% !important; }
-
-/* ── outer split ── */
+/* ── split shell ── */
 .hrms-split {
   display: flex;
   min-height: 100vh;
 }
 
-/* ═══════════════════════════════════
+/* ═══════════════════════════════════════
    LEFT PANEL
-   ═══════════════════════════════════ */
+   ═══════════════════════════════════════ */
 .hrms-left {
-  flex: 0 0 55%;
-  background: linear-gradient(160deg, #0d1b3e 0%, #152354 40%, #1a2d6e 100%);
+  flex: 0 0 56%;
+  background: #142160;
   display: flex;
   flex-direction: column;
-  padding: 40px 48px 40px;
+  padding: 36px 48px 0;
   position: relative;
   overflow: hidden;
   color: #fff;
 }
 
-/* large circle ring watermark */
-.hrms-left::after {
-  content: "";
+/* large circle ring – centered vertically, extends right */
+.hrms-ring {
   position: absolute;
-  width: 520px; height: 520px;
+  width: 580px; height: 580px;
   border-radius: 50%;
-  border: 60px solid rgba(255,255,255,0.05);
+  border: 56px solid rgba(255,255,255,0.055);
   top: 50%; right: -140px;
   transform: translateY(-50%);
   pointer-events: none;
+  z-index: 0;
+}
+
+/* wave at bottom of left panel */
+.hrms-wave {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 110px;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* logo */
 .hrms-logo {
   display: flex; align-items: center; gap: 14px;
-  margin-bottom: 64px; position: relative; z-index: 1;
+  margin-bottom: 52px;
+  position: relative; z-index: 2;
 }
-.hrms-logo-img {
-  width: 52px; height: 52px; border-radius: 12px;
+.hrms-logo-box {
+  width: 54px; height: 54px; border-radius: 12px;
   background: #fff; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.hrms-logo-img img { width: 44px; height: 44px; object-fit: contain; }
-.hrms-logo-title { font-size: 17px; font-weight: 700; color: #fff; line-height: 1.2; }
-.hrms-logo-sub   { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+.hrms-logo-box img { width: 46px; height: 46px; object-fit: contain; }
+.hrms-logo-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
+.hrms-logo-sub   { font-size: 11.5px; color: rgba(255,255,255,0.5); margin-top: 1px; }
 
 /* hero */
-.hrms-hero { margin-bottom: 36px; position: relative; z-index: 1; }
+.hrms-hero {
+  margin-bottom: 32px;
+  position: relative; z-index: 2;
+}
 .hrms-hero h1 {
-  font-size: 42px; font-weight: 800; line-height: 1.15;
-  color: #fff; margin: 0 0 16px; letter-spacing: -0.5px;
+  font-size: 44px; font-weight: 800; line-height: 1.12;
+  color: #fff; margin: 0 0 14px; letter-spacing: -0.5px;
 }
 .hrms-hero h1 .accent { color: #f5c518; }
 .hrms-hero p {
-  font-size: 14px; color: rgba(255,255,255,0.6);
-  line-height: 1.65; max-width: 380px; margin: 0;
+  font-size: 14px; color: rgba(255,255,255,0.58);
+  line-height: 1.65; max-width: 390px; margin: 0;
 }
 
 /* feature buttons */
 .hrms-features {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  margin-bottom: 36px; position: relative; z-index: 1;
+  margin-bottom: 32px;
+  position: relative; z-index: 2;
 }
 .hrms-feat-btn {
   display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px; padding: 13px 16px;
+  border-radius: 10px; padding: 12px 15px;
   font-size: 13px; color: rgba(255,255,255,0.88); font-weight: 500;
 }
 .feat-icon {
-  width: 28px; height: 28px; border-radius: 7px;
+  width: 30px; height: 30px; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; flex-shrink: 0;
 }
-.feat-icon.att   { background: rgba(96,165,250,0.2); }
-.feat-icon.leave { background: rgba(52,211,153,0.2); }
-.feat-icon.pay   { background: rgba(251,191,36,0.2); }
-.feat-icon.perf  { background: rgba(167,139,250,0.2); }
+.feat-icon.att   { background: rgba(96,165,250,0.18); }
+.feat-icon.leave { background: rgba(52,211,153,0.18); }
+.feat-icon.pay   { background: rgba(251,191,36,0.18); }
+.feat-icon.perf  { background: rgba(167,139,250,0.18); }
 
 /* trust row */
 .hrms-trust {
   display: flex; align-items: center; gap: 14px;
-  margin-bottom: 36px; position: relative; z-index: 1;
+  margin-bottom: 0;
+  position: relative; z-index: 2;
 }
 .avatar-stack { display: flex; }
 .avatar-stack span {
-  width: 34px; height: 34px; border-radius: 50%;
-  border: 2.5px solid #152354;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2.5px solid #142160;
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: #fff;
   margin-left: -10px;
@@ -116,161 +131,177 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
 .av-4 { background: #eab308; }
 .av-more { background: #334155; font-size: 10px; }
 .hrms-trust-text strong { display: block; font-size: 13px; font-weight: 700; color: #fff; }
-.hrms-trust-text span   { font-size: 12px; color: rgba(255,255,255,0.55); }
+.hrms-trust-text span   { font-size: 12px; color: rgba(255,255,255,0.5); }
 
-/* floating stat cards */
-.hrms-cards { display: flex; gap: 14px; position: relative; z-index: 1; align-items: flex-end; }
+/* cards area – takes remaining space, relative for absolute children */
+.hrms-cards-area {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  min-height: 160px;
+  margin-top: 24px;
+}
 
-.stat-card-leave {
-  background: #fff; border-radius: 14px;
+/* leave card – white, bottom-left */
+.card-leave {
+  position: absolute;
+  bottom: 118px; left: 0;
+  background: #fff;
+  border-radius: 14px;
   padding: 14px 18px;
   display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-  flex: 0 0 auto;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.22);
+  min-width: 190px;
 }
 .leave-check-wrap {
   width: 32px; height: 32px; border-radius: 8px;
-  background: #dcfce7; display: flex; align-items: center; justify-content: center;
-  color: #16a34a; font-size: 15px;
+  background: #dcfce7;
+  display: flex; align-items: center; justify-content: center;
+  color: #16a34a; font-size: 15px; flex-shrink: 0;
 }
 .leave-card-title { font-size: 13px; font-weight: 700; color: #111827; }
 .leave-card-sub   { font-size: 11px; color: #6b7280; margin-top: 1px; }
 
-.stat-card-att {
-  background: #1e2d5a; border-radius: 14px;
-  padding: 14px 18px; flex: 1;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+/* attendance card – dark, bottom-center, slightly higher */
+.card-att {
+  position: absolute;
+  bottom: 128px; left: 220px; right: 24px;
+  background: #1e2d6a;
+  border-radius: 14px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.3);
 }
 .att-label  { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
 .att-value  { font-size: 26px; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 8px; }
 .att-bar    { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; margin-bottom: 6px; }
 .att-fill   { height: 100%; background: linear-gradient(90deg,#34d399,#10b981); border-radius: 3px; }
-.att-sub    { font-size: 11px; color: rgba(255,255,255,0.45); }
+.att-sub    { font-size: 11px; color: rgba(255,255,255,0.4); }
 
-/* ═══════════════════════════════════
+/* ═══════════════════════════════════════
    RIGHT PANEL
-   ═══════════════════════════════════ */
+   ═══════════════════════════════════════ */
 .hrms-right {
   flex: 1;
-  background: #f0f2f7;
+  background: #eef0f6;
   display: flex; align-items: center; justify-content: center;
-  padding: 40px 32px;
-  position: relative;
+  padding: 32px 28px;
 }
 
-/* the white form card */
 .hrms-form-card {
   background: #fff;
-  border-radius: 20px;
-  padding: 40px 40px 32px;
-  width: 100%; max-width: 440px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  border-radius: 22px;
+  padding: 44px 40px 32px;
+  width: 100%; max-width: 450px;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.09);
 }
 
 /* welcome badge */
-.hrms-welcome-badge {
+.hrms-badge {
   display: inline-flex; align-items: center; gap: 6px;
   background: #fff8e6; border: 1px solid #fde68a;
   color: #d97706; border-radius: 20px;
   padding: 5px 14px; font-size: 12px; font-weight: 600;
   margin-bottom: 14px;
 }
-.hrms-sign-title { font-size: 28px; font-weight: 800; color: #111827; margin: 0 0 6px; }
-.hrms-sign-sub   { font-size: 13px; color: #6b7280; margin: 0 0 28px; line-height: 1.5; }
+.hrms-sign-title { font-size: 30px; font-weight: 800; color: #111827; margin: 0 0 7px; letter-spacing: -0.3px; }
+.hrms-sign-sub   { font-size: 13.5px; color: #6b7280; margin: 0 0 28px; line-height: 1.5; }
 
-/* field labels */
-.hrms-right .form-label {
+/* labels */
+.hrms-form-card .form-label {
   font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 7px; display: block;
 }
-.hrms-right .form-group { margin-bottom: 18px; }
+.hrms-form-card .form-group { margin-bottom: 18px; }
 
 /* inputs */
-.hrms-right .form-control {
-  width: 100%; height: 46px;
+.hrms-form-card .form-control {
+  width: 100%; height: 48px;
   border-radius: 10px; border: 1.5px solid #e5e7eb;
-  font-size: 14px; padding: 0 42px 0 16px;
+  font-size: 14px; padding: 0 44px 0 16px;
   color: #111827; background: #fff;
   transition: border-color .2s, box-shadow .2s; outline: none;
+  -webkit-appearance: none;
 }
-.hrms-right .form-control:focus {
+.hrms-form-card .form-control:focus {
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
 }
 
 /* remember + forgot row */
-.hrms-remember-row {
+.hrms-row {
   display: flex; justify-content: space-between; align-items: center;
-  margin: 2px 0 22px;
+  margin: 4px 0 22px;
 }
-.hrms-remember-row label {
+.hrms-row label {
   display: flex; align-items: center; gap: 8px;
   font-size: 13px; color: #374151; cursor: pointer;
 }
-.hrms-remember-row input[type=checkbox] {
-  width: 16px; height: 16px; accent-color: #1e3a8a; cursor: pointer;
+.hrms-row input[type=checkbox] {
+  width: 16px; height: 16px; accent-color: #1e3a8a; cursor: pointer; flex-shrink: 0;
 }
-.hrms-remember-row a {
-  font-size: 13px; color: #f97316; font-weight: 600; text-decoration: none;
-}
-.hrms-remember-row a:hover { text-decoration: underline; }
+.hrms-row a { font-size: 13px; color: #f97316; font-weight: 600; text-decoration: none; }
+.hrms-row a:hover { text-decoration: underline; }
 
 /* Sign In button */
-.hrms-btn-signin {
-  width: 100%; height: 48px;
+.hrms-btn-primary {
+  width: 100%; height: 50px;
   background: #1e3a8a; color: #fff; border: none;
   border-radius: 10px; font-size: 15px; font-weight: 600;
-  letter-spacing: 0.3px; cursor: pointer;
-  transition: background .2s; margin-bottom: 0;
+  cursor: pointer; transition: background .2s;
+  display: flex; align-items: center; justify-content: center;
 }
-.hrms-btn-signin:hover { background: #1e40af; }
+.hrms-btn-primary:hover { background: #1e40af; }
 
 /* or divider */
-.hrms-or-divider {
+.hrms-or {
   display: flex; align-items: center; gap: 12px;
   margin: 18px 0; color: #9ca3af; font-size: 12px;
 }
-.hrms-or-divider::before,
-.hrms-or-divider::after { content: ""; flex: 1; height: 1px; background: #f3f4f6; }
+.hrms-or::before, .hrms-or::after {
+  content: ""; flex: 1; height: 1px; background: #f0f0f0;
+}
 
 /* email link button */
-.hrms-btn-email-link {
-  width: 100%; height: 46px;
+.hrms-btn-secondary {
+  width: 100%; height: 48px;
   background: #fff; color: #374151;
   border: 1.5px solid #e5e7eb; border-radius: 10px;
   font-size: 14px; font-weight: 500; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   text-decoration: none; transition: border-color .2s;
 }
-.hrms-btn-email-link:hover { border-color: #d1d5db; color: #111827; }
+.hrms-btn-secondary:hover { border-color: #d1d5db; color: #111827; }
 
 /* footer */
 .hrms-footer {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 24px; font-size: 11px; color: #9ca3af;
+  margin-top: 24px; font-size: 11.5px; color: #9ca3af;
 }
-.hrms-footer a { color: #f97316; text-decoration: none; font-weight: 500; }
+.hrms-footer a { color: #f97316; font-weight: 600; text-decoration: none; }
 .hrms-footer a:hover { text-decoration: underline; }
 
-/* hide frappe's default page-card styling inside our card */
-.hrms-form-card .page-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+/* strip frappe defaults inside our card */
+.hrms-form-card .login-content.page-card {
+  box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important;
+}
 .hrms-form-card .page-card-body,
 .hrms-form-card .page-card-actions { padding: 0 !important; }
-.hrms-form-card .page-card-head { display: none !important; }
-.hrms-form-card .forgot-password-message { display: none !important; }
-.hrms-form-card .login-error-banner { margin-bottom: 12px; }
+.hrms-form-card .page-card-head,
+.hrms-form-card .forgot-password-message,
 .hrms-form-card .sign-up-message { display: none !important; }
+.hrms-form-card .login-error-banner { margin-bottom: 12px; }
 
-/* frappe section show/hide — keep all sections but only one visible */
+/* frappe section wrappers */
 .for-login,
+.for-email-login,
 .for-signup,
 .for-forgot,
-.for-email-login,
 .for-login-with-email-link { display: contents; }
 
 /* responsive */
 @media (max-width: 860px) {
   .hrms-left { display: none; }
-  .hrms-right { padding: 24px 16px; }
+  .hrms-right { padding: 20px 16px; }
+  .hrms-form-card { padding: 32px 24px 28px; }
 }
 </style>
 {% endblock %}
@@ -312,7 +343,7 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
   </div>
 </div>
 {% endif %}
-<div class="hrms-remember-row">
+<div class="hrms-row">
   <label><input type="checkbox" id="remember_me"> {{ _("Remember me") }}</label>
   {% if not disable_user_pass_login %}
   <a href="#forgot">{{ _("Forgot password?") }}</a>
@@ -320,10 +351,10 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
 </div>
 <div class="page-card-actions">
   {% if not disable_user_pass_login %}
-  <button class="hrms-btn-signin btn-login" type="submit">{{ _("Sign In →") }}</button>
+  <button class="hrms-btn-primary btn-login" type="submit">{{ _("Sign In →") }}</button>
   {% endif %}
   {% if ldap_settings and ldap_settings.enabled %}
-  <button class="hrms-btn-signin btn-login btn-ldap-login" type="button">{{ _("Login with LDAP") }}</button>
+  <button class="hrms-btn-primary btn-login btn-ldap-login" type="button" style="margin-top:10px;">{{ _("Login with LDAP") }}</button>
   {% endif %}
 </div>
 {%- endmacro %}
@@ -334,8 +365,18 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
   <!-- ═══ LEFT PANEL ═══ -->
   <div class="hrms-left">
 
+    <!-- circle ring watermark -->
+    <div class="hrms-ring"></div>
+
+    <!-- bottom wave SVG -->
+    <svg class="hrms-wave" viewBox="0 0 800 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0,60 C200,110 400,10 600,70 C700,95 760,55 800,70 L800,110 L0,110 Z" fill="rgba(255,255,255,0.045)"/>
+      <path d="M0,80 C150,40 350,100 550,60 C680,35 750,80 800,65 L800,110 L0,110 Z" fill="rgba(255,255,255,0.03)"/>
+    </svg>
+
+    <!-- logo -->
     <div class="hrms-logo">
-      <div class="hrms-logo-img">
+      <div class="hrms-logo-box">
         <img src="/assets/india_payroll/images/pratyin-logo.png" alt="Pratyin">
       </div>
       <div>
@@ -344,19 +385,22 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </div>
     </div>
 
-    <div class="hrms-hero">
+    <!-- hero -->
+    <div class="hrms-hero" style="position:relative;z-index:2;">
       <h1>Your team's home<br>for <span class="accent">everything HR</span></h1>
       <p>Apply leave, mark attendance, view payslips and stay connected with your organisation — all in one place.</p>
     </div>
 
-    <div class="hrms-features">
+    <!-- feature buttons -->
+    <div class="hrms-features" style="position:relative;z-index:2;">
       <div class="hrms-feat-btn"><span class="feat-icon att">🕐</span> Attendance</div>
       <div class="hrms-feat-btn"><span class="feat-icon leave">🌿</span> Leave Management</div>
       <div class="hrms-feat-btn"><span class="feat-icon pay">💰</span> Payroll &amp; Payslips</div>
       <div class="hrms-feat-btn"><span class="feat-icon perf">⭐</span> Performance</div>
     </div>
 
-    <div class="hrms-trust">
+    <!-- trust row -->
+    <div class="hrms-trust" style="position:relative;z-index:2;">
       <div class="avatar-stack">
         <span class="av-1">AK</span>
         <span class="av-2">PS</span>
@@ -370,15 +414,18 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </div>
     </div>
 
-    <div class="hrms-cards">
-      <div class="stat-card-leave">
+    <!-- floating cards area (spacer + absolutely positioned cards) -->
+    <div class="hrms-cards-area">
+      <!-- Leave approved – white card, lower-left -->
+      <div class="card-leave">
         <div class="leave-check-wrap">✓</div>
         <div>
           <div class="leave-card-title">Leave approved</div>
           <div class="leave-card-sub">Priya · 2 days</div>
         </div>
       </div>
-      <div class="stat-card-att">
+      <!-- Today's attendance – dark card, slightly higher, right -->
+      <div class="card-att">
         <div class="att-label">Today's attendance</div>
         <div class="att-value">92%</div>
         <div class="att-bar"><div class="att-fill" style="width:92%"></div></div>
@@ -386,13 +433,13 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </div>
     </div>
 
-  </div>
+  </div><!-- /.hrms-left -->
 
   <!-- ═══ RIGHT PANEL ═══ -->
   <div class="hrms-right">
     <div class="hrms-form-card">
 
-      <div class="hrms-welcome-badge">👋 Welcome back</div>
+      <div class="hrms-badge">👋 Welcome back</div>
       <h2 class="hrms-sign-title">Sign in to your account</h2>
       <p class="hrms-sign-sub">Enter your credentials to access your HR workspace.</p>
 
@@ -415,9 +462,9 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </section>
       {% endif %}
 
-      <!-- or continue with + email link (always shown) -->
-      <div class="hrms-or-divider">or continue with</div>
-      <a href="#login-with-email-link" class="hrms-btn-email-link btn-login-option btn-login-with-email-link">
+      <!-- or continue with + Login with Email Link (always visible) -->
+      <div class="hrms-or">or continue with</div>
+      <a href="#login-with-email-link" class="hrms-btn-secondary btn-login-option btn-login-with-email-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <use href="#es-line-email"></use>
         </svg>
@@ -425,9 +472,9 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </a>
 
       {% if social_login %}
-      <div style="margin-top:12px;">
+      <div style="margin-top:10px;">
         {% for provider in provider_logins %}
-        <a href="{{ provider.auth_url }}" class="hrms-btn-email-link btn-login-option" style="margin-top:8px;">
+        <a href="{{ provider.auth_url }}" class="hrms-btn-secondary btn-login-option" style="margin-top:8px;">
           {% if provider.icon %}{{ provider.icon }}{% endif %}
           {{ _("Login with {0}").format(provider.provider_name) }}
         </a>
@@ -435,11 +482,16 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
       </div>
       {% endif %}
 
-      <!-- for-signup -->
+      <!-- for-signup (hidden, shown by frappe JS) -->
       <section class="for-signup {{ 'signup-disabled' if disable_signup else '' }}" style="display:none;">
         <div class="login-content page-card">
-          <div class="page-card-head" style="display:block!important;"><h4>{{ _('Sign Up') }}</h4><p>{{ _("Let's setup your account.") }}</p></div>
-          {%- if not disable_signup -%}{{ signup_form_template }}{%- else -%}
+          <div class="page-card-head" style="display:block!important;">
+            <h4>{{ _('Sign Up') }}</h4>
+            <p class="page-card-subtitle">{{ _("Let's setup your account.") }}</p>
+          </div>
+          {%- if not disable_signup -%}
+          {{ signup_form_template }}
+          {%- else -%}
           <div class="signup-disabled-message">
             <span class="indicator gray">{{ _("Signup Disabled") }}</span>
             <p class="text-muted mt-1">{{ _("Signups have been disabled.") }}</p>
@@ -449,10 +501,13 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
         </div>
       </section>
 
-      <!-- for-forgot -->
+      <!-- for-forgot (hidden, shown by frappe JS) -->
       <section class="for-forgot" style="display:none;">
         <div class="login-content page-card">
-          <div class="page-card-head" style="display:block!important;"><h4>{{ _('Forgot Password?') }}</h4><p>{{ _("We'll send a reset link to your email.") }}</p></div>
+          <div class="page-card-head" style="display:block!important;">
+            <h4>{{ _('Forgot Password?') }}</h4>
+            <p class="page-card-subtitle">{{ _("We'll send a reset link to your email.") }}</p>
+          </div>
           <form class="form-signin form-forgot hide" role="form" novalidate>
             <div class="page-card-body">
               <div class="form-group">
@@ -468,14 +523,16 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
               </div>
             </div>
             <div class="page-card-actions">
-              <button class="hrms-btn-signin btn-signup btn-forgot" type="submit" disabled style="margin-top:8px;">{{ _("Send Link") }}</button>
+              <button class="hrms-btn-primary btn-signup btn-forgot" type="submit" disabled style="margin-top:4px;">{{ _("Send Link") }}</button>
             </div>
           </form>
-          <div class="text-center" style="margin-top:14px;font-size:13px;"><a href="#login" style="color:#f97316;text-decoration:none;">{{ _("Back to sign in") }}</a></div>
+          <div style="margin-top:16px;text-align:center;font-size:13px;">
+            <a href="#login" style="color:#f97316;text-decoration:none;font-weight:600;">{{ _("Back to sign in") }}</a>
+          </div>
         </div>
       </section>
 
-      <!-- for-login-with-email-link -->
+      <!-- for-login-with-email-link (hidden, shown by frappe JS) -->
       <section class="for-login-with-email-link" style="display:none;">
         <div class="login-content page-card">
           <div class="page-card-head" style="display:block!important;"><h4>{{ _('Sign In') }}</h4></div>
@@ -500,9 +557,12 @@ body { background: #f0f2f7 !important; font-family: -apple-system, BlinkMacSyste
               </div>
             </div>
             <div class="page-card-actions">
-              <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">{{ _("Didn't receive the link?") }} <a href="#" class="btn-resend-link" style="color:#f97316;">{{ _("Resend") }}</a></p>
-              <button class="hrms-btn-signin btn-login btn-login-with-email-link" type="submit">{{ _("Send login link") }}</button>
-              <a href="#login" class="hrms-btn-email-link btn-login-option" style="margin-top:10px;display:flex;">{{ _("Login with password") }}</a>
+              <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+                {{ _("Didn't receive the link?") }}
+                <a href="#" class="btn-resend-link" style="color:#f97316;font-weight:600;">{{ _("Resend") }}</a>
+              </p>
+              <button class="hrms-btn-primary btn-login btn-login-with-email-link" type="submit">{{ _("Send login link") }}</button>
+              <a href="#login" class="hrms-btn-secondary btn-login-option" style="margin-top:10px;display:flex;">{{ _("Login with password") }}</a>
             </div>
           </form>
         </div>
