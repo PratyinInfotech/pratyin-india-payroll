@@ -1,0 +1,418 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Sign In · Pratyin HRMS{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block head_include %}
+{{ include_style('login.bundle.css') }}
+<style>
+/* ── Reset frappe login defaults ── */
+body { background: #fff !important; }
+section.for-login .login-content,
+section.for-signup .login-content,
+section.for-forgot .login-content,
+section.for-login-with-email-link .login-content {
+  box-shadow: none !important; border: none !important; padding: 0 !important;
+}
+
+/* ── Outer split wrapper ── */
+.hrms-split {
+  display: flex; min-height: 100vh; overflow: hidden;
+}
+
+/* ══════════════════════════════════
+   LEFT PANEL
+   ══════════════════════════════════ */
+.hrms-left {
+  flex: 0 0 52%;
+  background: linear-gradient(145deg, #0b1f3a 0%, #0d2b56 50%, #0f3270 100%);
+  display: flex; flex-direction: column;
+  padding: 44px 48px 36px;
+  position: relative; overflow: hidden; color: #fff;
+}
+.hrms-left::before {
+  content: ""; position: absolute;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: rgba(255,255,255,0.03);
+  bottom: -120px; left: -80px; pointer-events: none;
+}
+.hrms-left::after {
+  content: ""; position: absolute;
+  width: 320px; height: 320px; border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  top: -60px; right: -60px; pointer-events: none;
+}
+/* logo */
+.hrms-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 56px; position: relative; z-index: 1; }
+.hrms-logo-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 800; color: #fff;
+}
+.hrms-logo-title { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
+.hrms-logo-sub   { font-size: 11px; color: rgba(255,255,255,0.55); }
+/* hero */
+.hrms-hero { margin-bottom: 32px; position: relative; z-index: 1; }
+.hrms-hero h1 { font-size: 36px; font-weight: 800; line-height: 1.18; color: #fff; margin: 0 0 14px; }
+.hrms-hero h1 .accent { color: #f97316; }
+.hrms-hero p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.6; max-width: 360px; margin: 0; }
+/* feature buttons */
+.hrms-features { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 32px; position: relative; z-index: 1; }
+.hrms-feat-btn {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 500;
+}
+/* trust row */
+.hrms-trust { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; position: relative; z-index: 1; }
+.avatar-stack { display: flex; }
+.avatar-stack span {
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid #0d2b56;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; margin-left: -8px;
+}
+.avatar-stack span:first-child { margin-left: 0; }
+.av-1 { background: #7c3aed; } .av-2 { background: #db2777; }
+.av-3 { background: #0891b2; } .av-4 { background: #d97706; }
+.av-more { background: #374151; font-size: 10px; }
+.hrms-trust p { font-size: 12px; color: rgba(255,255,255,0.65); margin: 0; }
+/* stat cards */
+.hrms-cards { display: flex; gap: 12px; position: relative; z-index: 1; }
+.stat-card {
+  flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px; padding: 14px 16px;
+}
+.stat-card-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+.stat-card-value { font-size: 22px; font-weight: 800; color: #fff; line-height: 1; }
+.stat-card-sub   { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.stat-card-leave { display: flex; align-items: center; gap: 8px; }
+.leave-check { width: 28px; height: 28px; border-radius: 8px; background: rgba(34,197,94,0.2); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 14px; }
+.leave-title { font-size: 12px; color: rgba(255,255,255,0.9); font-weight: 600; }
+.leave-sub   { font-size: 11px; color: rgba(255,255,255,0.5); }
+.progress-bar-wrap { margin-top: 8px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg,#34d399,#10b981); border-radius: 2px; }
+
+/* ══════════════════════════════════
+   RIGHT PANEL
+   ══════════════════════════════════ */
+.hrms-right {
+  flex: 1; background: #fff;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 40px; position: relative;
+}
+.hrms-lang-top { position: absolute; top: 20px; right: 24px; font-size: 13px; color: #6b7280; }
+/* frappe card overrides inside right */
+.hrms-right .login-content.page-card {
+  width: 100%; max-width: 400px;
+  box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 auto !important;
+}
+.hrms-right .page-card-body  { padding: 0 !important; }
+.hrms-right .page-card-actions { padding: 0 !important; }
+/* welcome badge */
+.hrms-welcome-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #fff7ed; border: 1px solid #fed7aa;
+  color: #ea580c; border-radius: 20px;
+  padding: 4px 12px; font-size: 12px; font-weight: 600; margin-bottom: 10px;
+}
+.hrms-sign-title { font-size: 26px; font-weight: 800; color: #111827; margin: 0 0 6px; }
+.hrms-sign-sub   { font-size: 13px; color: #6b7280; margin-bottom: 28px; }
+/* fields */
+.hrms-right .form-control {
+  height: 44px; border-radius: 10px; border: 1.5px solid #e5e7eb;
+  font-size: 14px; padding: 0 40px 0 14px; transition: border-color .2s, box-shadow .2s;
+}
+.hrms-right .form-control:focus {
+  border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.12); outline: none;
+}
+.hrms-right .form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.hrms-right .form-group { margin-bottom: 16px; }
+/* remember + forgot */
+.hrms-remember-row {
+  display: flex; justify-content: space-between; align-items: center; margin: 4px 0 20px;
+}
+.hrms-remember-row label { font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.hrms-remember-row a { font-size: 13px; color: #f97316; text-decoration: none; font-weight: 500; }
+/* buttons */
+.hrms-right .btn-login[type=submit] {
+  background: #111827; color: #fff; border: none;
+  height: 44px; border-radius: 10px; font-size: 14px; font-weight: 600;
+  letter-spacing: .3px; transition: background .2s;
+}
+.hrms-right .btn-login[type=submit]:hover { background: #1f2937; }
+.hrms-right .btn-login-with-email-link {
+  background: #fff !important; color: #374151 !important;
+  border: 1.5px solid #e5e7eb !important; border-radius: 10px !important;
+  height: 44px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+/* or divider */
+.hrms-or-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: #9ca3af; font-size: 12px; }
+.hrms-or-divider::before, .hrms-or-divider::after { content: ""; flex: 1; height: 1px; background: #f3f4f6; }
+/* hide frappe forgot link (we render our own) */
+.hrms-right .forgot-password-message { display: none; }
+/* footer */
+.hrms-footer {
+  font-size: 11px; color: #9ca3af; margin-top: 28px;
+  display: flex; justify-content: space-between; width: 100%; max-width: 400px;
+}
+.hrms-footer a { color: #6b7280; text-decoration: none; }
+
+/* responsive */
+@media (max-width: 768px) {
+  .hrms-left { display: none; }
+  .hrms-right { padding: 40px 24px; }
+}
+</style>
+{% endblock %}
+
+{% macro email_login_body() -%}
+{% if not disable_user_pass_login or (ldap_settings and ldap_settings.enabled) %}
+<div class="page-card-body">
+  <div class="login-error-banner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <use href="#es-line-alert-triangle"></use>
+    </svg>
+    <span></span>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="login_email">{{ login_label or _("Email or Employee ID") }}</label>
+    <div class="email-field">
+      <input type="text" id="login_email" class="form-control"
+        placeholder="{{ login_name_placeholder or _('jane@company.com') }}"
+        required autofocus autocomplete="username">
+      <svg class="field-icon email-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <use class="es-lock" href="#es-line-email"></use>
+      </svg>
+    </div>
+    <p class="field-error"></p>
+  </div>
+  <div class="form-group">
+    <label class="form-label" for="login_password">{{ _("Password") }}</label>
+    <div class="password-field">
+      <input type="password" id="login_password" class="form-control" placeholder="••••••••"
+        autocomplete="current-password" required>
+      <svg class="field-icon password-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <use class="es-lock" href="#es-line-lock"></use>
+      </svg>
+      <svg toggle="#login_password" class="toggle-password" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <use href="#es-line-preview"></use>
+      </svg>
+    </div>
+    <p class="field-error"></p>
+  </div>
+</div>
+{% endif %}
+<div class="hrms-remember-row">
+  <label><input type="checkbox" id="remember_me"> {{ _("Remember me") }}</label>
+  {% if not disable_user_pass_login %}
+  <a href="#forgot">{{ _("Forgot password?") }}</a>
+  {% endif %}
+</div>
+<div class="page-card-actions">
+  {% if not disable_user_pass_login %}
+  <button class="btn btn-sm btn-default btn-block btn-login" type="submit">{{ _("Sign In →") }}</button>
+  {% endif %}
+  {% if ldap_settings and ldap_settings.enabled %}
+  <button class="btn btn-sm btn-default btn-block btn-login btn-ldap-login">{{ _("Login with LDAP") }}</button>
+  {% endif %}
+  {% if login_with_email_link %}
+  <div class="hrms-or-divider">or continue with</div>
+  <a href="#login-with-email-link" class="btn btn-block btn-default btn-sm btn-login-option btn-login-with-email-link">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use href="#es-line-email"></use></svg>
+    {{ _("Login with Email Link") }}
+  </a>
+  {% endif %}
+  {% if social_login %}
+  <div class="social-logins">
+    {% for provider in provider_logins %}
+    <a href="{{ provider.auth_url }}" class="btn btn-block btn-default btn-sm btn-login-option btn-{{ provider.name }}">
+      {% if provider.icon %}{{ provider.icon }}{% endif %}
+      {{ _("Login with {0}").format(provider.provider_name) }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% block page_content %}
+<div class="hrms-split">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="hrms-left">
+    <div class="hrms-logo">
+      <div class="hrms-logo-icon">P</div>
+      <div>
+        <div class="hrms-logo-title">Pratyin HRMS</div>
+        <div class="hrms-logo-sub">Human Resource Management</div>
+      </div>
+    </div>
+
+    <div class="hrms-hero">
+      <h1>Your team's home<br>for <span class="accent">everything HR</span></h1>
+      <p>Apply leave, mark attendance, view payslips and stay connected with your organisation — all in one place.</p>
+    </div>
+
+    <div class="hrms-features">
+      <div class="hrms-feat-btn">🕐&nbsp; Attendance</div>
+      <div class="hrms-feat-btn">🌿&nbsp; Leave Management</div>
+      <div class="hrms-feat-btn">💰&nbsp; Payroll &amp; Payslips</div>
+      <div class="hrms-feat-btn">⭐&nbsp; Performance</div>
+    </div>
+
+    <div class="hrms-trust">
+      <div class="avatar-stack">
+        <span class="av-1">AK</span>
+        <span class="av-2">PS</span>
+        <span class="av-3">BM</span>
+        <span class="av-4">NJ</span>
+        <span class="av-more">+240</span>
+      </div>
+      <p>Trusted by 240+ employees<br>across all departments</p>
+    </div>
+
+    <div class="hrms-cards">
+      <div class="stat-card">
+        <div class="stat-card-leave">
+          <div class="leave-check">✓</div>
+          <div>
+            <div class="leave-title">Leave approved</div>
+            <div class="leave-sub">Priya · 2 days</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Today's attendance</div>
+        <div class="stat-card-value">92%</div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:92%"></div></div>
+        <div class="stat-card-sub">228 of 248 checked in</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="hrms-right">
+    {% if show_language_picker %}
+    <div class="hrms-lang-top">🌐 English ▾</div>
+    {% endif %}
+
+    <div style="width:100%;max-width:400px;">
+      <div class="hrms-welcome-badge">👋 Welcome back</div>
+      <h2 class="hrms-sign-title">Sign in to your account</h2>
+      <p class="hrms-sign-sub">Enter your credentials to access your HR workspace.</p>
+    </div>
+
+    <section class="for-login">
+      <div class="login-content page-card">
+        <form class="form-signin form-login" role="form" novalidate>
+          {{ email_login_body() }}
+        </form>
+      </div>
+    </section>
+
+    {% if social_login %}
+    <section class="for-email-login">
+      <div class="login-content page-card">
+        <form class="form-signin form-login" role="form" novalidate>
+          {{ email_login_body() }}
+        </form>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="for-signup {{ 'signup-disabled' if disable_signup else '' }}">
+      <div class="login-content page-card">
+        <div class="page-card-head"><h4>{{ _('Sign Up') }}</h4><p class="page-card-subtitle">{{ _("Let's setup your account.") }}</p></div>
+        {%- if not disable_signup -%}
+        {{ signup_form_template }}
+        {%- else -%}
+        <div class="signup-disabled-message">
+          <span class="indicator gray">{{ _("Signup Disabled") }}</span>
+          <p class="text-muted mt-1">{{ _("Signups have been disabled for this website.") }}</p>
+          <div><a href="/" class="btn btn-primary btn-md">{{ _("Home") }}</a></div>
+        </div>
+        {%- endif -%}
+      </div>
+    </section>
+
+    <section class="for-forgot">
+      <div class="login-content page-card">
+        <div class="page-card-head">
+          <h4>{{ _('Forgot Password?') }}</h4>
+          <p class="page-card-subtitle">{{ _("Please enter your email, we'll send you a password reset link.") }}</p>
+        </div>
+        <form class="form-signin form-forgot hide" role="form" novalidate>
+          <div class="page-card-body">
+            <div class="form-group">
+              <label class="form-label" for="forgot_email">{{ _("Email") }}</label>
+              <div class="email-field">
+                <input type="email" id="forgot_email" class="form-control"
+                  placeholder="{{ _('jane@company.com') }}" required autofocus autocomplete="username">
+                <svg class="field-icon email-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <use class="es-lock" href="#es-line-email"></use>
+                </svg>
+              </div>
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="page-card-actions">
+            <button class="btn btn-sm btn-primary btn-block btn-signup btn-forgot" type="submit" disabled>{{ _("Send Link") }}</button>
+          </div>
+        </form>
+        <div class="text-center sign-up-message"><a href="#login">{{ _("Back to sign in") }}</a></div>
+      </div>
+    </section>
+
+    <section class="for-login-with-email-link">
+      <div class="login-content page-card">
+        <div class="page-card-head"><h4>{{ _('Sign In') }}</h4></div>
+        <form class="form-signin form-login-with-email-link hide" role="form" novalidate>
+          <div class="page-card-body">
+            <div class="login-success-banner">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <use href="#es-line-alert-circle"></use>
+              </svg>
+              <span>{{ _("Please check your email.") }}</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="login_with_email_link_email">{{ _("Email") }}</label>
+              <div class="email-field">
+                <input type="email" id="login_with_email_link_email" class="form-control"
+                  placeholder="{{ _('jane@company.com') }}" required autofocus autocomplete="username">
+                <svg class="field-icon email-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <use class="es-lock" href="#es-line-email"></use>
+                </svg>
+              </div>
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="page-card-actions">
+            <p class="resend-link">{{ _("Didn't receive the link?") }} <a href="#" class="btn-resend-link">{{ _("Resend") }}</a></p>
+            <button class="btn btn-sm btn-primary btn-block btn-login btn-login-with-email-link" type="submit">{{ _("Send login link") }}</button>
+            <a href="#login" class="btn btn-sm btn-default btn-block btn-login-option">{{ _("Login with password") }}</a>
+          </div>
+        </form>
+        {%- if not disable_signup -%}
+        <div class="text-center sign-up-message">{{ _("Don't have an account?") }} <a href="#signup">{{ _("Sign up") }}</a></div>
+        {%- endif -%}
+      </div>
+    </section>
+
+    <div class="hrms-footer">
+      <span>© 2026 Pratyin · All rights reserved</span>
+      <span>Need access? <a href="mailto:sp@pratyin.com">Contact HR Admin</a></span>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>{% include "templates/includes/login/login.js" %}</script>
+{% endblock %}
+
+{% block sidebar %}{% endblock %}
