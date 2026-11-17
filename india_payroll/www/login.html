@@ -6,302 +6,379 @@
 
 {% block head_include %}
 {{ include_style('login.bundle.css') }}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ── global reset ── */
+/* ── reset & page ── */
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; height: 100%; }
-body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+html {
+  margin: 0; padding: 0;
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+body {
+  margin: 0; padding: 0;
+  overflow: hidden !important;
+  height: 100vh !important;
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif !important;
+  background: #0b1f4d !important;
+}
 .navbar, .page-header, footer.web-footer { display: none !important; }
-.container, .page-content { padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-#main-wrapper, .main-section-with-sidebar { padding: 0 !important; }
-
-/* ── split shell ── */
-.hrms-split {
-  display: flex;
-  min-height: 100vh;
+.container, .page-content, #main-wrapper,
+.main-section-with-sidebar, .page-content-wrapper {
+  padding: 0 !important; margin: 0 !important;
+  max-width: 100% !important; width: 100% !important;
+  overflow: hidden !important;
 }
 
-/* ═══════════════════════════════════════
-   LEFT PANEL
-   ═══════════════════════════════════════ */
-.hrms-left {
-  flex: 0 0 56%;
-  background: #142160;
-  display: flex;
-  flex-direction: column;
-  padding: 36px 48px 0;
+/* ── full-screen shell ── */
+.hrms-wrap {
   position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  color: #fff;
 }
 
-/* large circle ring – centered vertically, extends right */
-.hrms-ring {
+/* ══════════════════════════════════
+   FULL-SCREEN NAVY BACKGROUND
+   ══════════════════════════════════ */
+.hrms-left {
   position: absolute;
-  width: 580px; height: 580px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(155deg, #0b1f4d 0%, #13306e 60%, #1e3a8a 100%);
+  padding: 64px 80px;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* gold ring decoration */
+.hrms-left::before {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
   border-radius: 50%;
-  border: 56px solid rgba(255,255,255,0.055);
-  top: 50%; right: -140px;
-  transform: translateY(-50%);
+  border: 60px solid rgba(234,179,8,.12);
+  left: 520px;
+  top: -150px;
   pointer-events: none;
   z-index: 0;
 }
 
-/* wave at bottom of left panel */
-.hrms-wave {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 110px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* logo */
+/* brand row */
 .hrms-logo {
   display: flex; align-items: center; gap: 14px;
-  margin-bottom: 52px;
   position: relative; z-index: 2;
 }
 .hrms-logo-box {
-  width: 54px; height: 54px; border-radius: 12px;
-  background: #fff; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  width: 60px; height: 58px;
+  background: #fff; border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.hrms-logo-box img { width: 46px; height: 46px; object-fit: contain; }
-.hrms-logo-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }
-.hrms-logo-sub   { font-size: 11.5px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+.hrms-logo-box img { width: 46px; height: 46px; object-fit: contain; display: block; }
+.hrms-logo-title { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.2; }
+.hrms-logo-sub   { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 500; margin-top: 1px; }
 
-/* hero */
+/* hero heading */
 .hrms-hero {
-  margin-bottom: 32px;
+  margin-top: 44px;
   position: relative; z-index: 2;
+  max-width: 580px;
 }
 .hrms-hero h1 {
-  font-size: 44px; font-weight: 800; line-height: 1.12;
-  color: #fff; margin: 0 0 14px; letter-spacing: -0.5px;
+  font-size: 46px; font-weight: 800; line-height: 1.18;
+  color: #fff; margin: 0 0 12px; letter-spacing: -0.5px;
 }
-.hrms-hero h1 .accent { color: #f5c518; }
+.hrms-hero h1 .accent {
+  font-style: normal;
+  background: linear-gradient(90deg, #facc15, #f59e0b);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; color: transparent;
+}
 .hrms-hero p {
-  font-size: 14px; color: rgba(255,255,255,0.58);
-  line-height: 1.65; max-width: 390px; margin: 0;
+  font-size: 16px; line-height: 1.55; max-width: 440px;
+  color: rgba(255,255,255,.88); margin: 0;
 }
 
-/* feature buttons */
+/* feature chips */
 .hrms-features {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  margin-bottom: 32px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-top: 28px;
+  max-width: 470px;
   position: relative; z-index: 2;
 }
 .hrms-feat-btn {
   display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px; padding: 12px 15px;
-  font-size: 13px; color: rgba(255,255,255,0.88); font-weight: 500;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(250,204,21,.25);
+  border-radius: 12px; padding: 11px 14px;
+  font-size: 14px; font-weight: 600; color: rgba(255,255,255,.95);
 }
 .feat-icon {
-  width: 30px; height: 30px; border-radius: 7px;
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(250,204,21,.18);
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; flex-shrink: 0;
 }
-.feat-icon.att   { background: rgba(96,165,250,0.18); }
-.feat-icon.leave { background: rgba(52,211,153,0.18); }
-.feat-icon.pay   { background: rgba(251,191,36,0.18); }
-.feat-icon.perf  { background: rgba(167,139,250,0.18); }
 
 /* trust row */
 .hrms-trust {
   display: flex; align-items: center; gap: 14px;
-  margin-bottom: 0;
+  margin-top: 28px;
   position: relative; z-index: 2;
 }
 .avatar-stack { display: flex; }
 .avatar-stack span {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 2.5px solid #142160;
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid #13306e;
   display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: #fff;
+  font-size: 13px; font-weight: 700;
   margin-left: -10px;
 }
 .avatar-stack span:first-child { margin-left: 0; }
-.av-1 { background: #22c55e; }
-.av-2 { background: #f97316; }
-.av-3 { background: #a855f7; }
-.av-4 { background: #eab308; }
-.av-more { background: #334155; font-size: 10px; }
-.hrms-trust-text strong { display: block; font-size: 13px; font-weight: 700; color: #fff; }
-.hrms-trust-text span   { font-size: 12px; color: rgba(255,255,255,0.5); }
+.av-1 { background: #f97316; color: #fff; }
+.av-2 { background: #16a34a; color: #fff; }
+.av-3 { background: #a855f7; color: #fff; }
+.av-4 { background: #facc15; color: #000; }
+.av-more { background: #fff; color: #1e40af; font-size: 12px; }
+.hrms-trust-text strong { display: block; font-size: 15px; font-weight: 700; color: #fff; }
+.hrms-trust-text span   { font-size: 14px; color: rgba(255,255,255,.75); }
 
-/* cards area – takes remaining space, relative for absolute children */
-.hrms-cards-area {
-  flex: 1;
-  position: relative;
-  z-index: 2;
-  min-height: 160px;
-  margin-top: 24px;
-}
 
-/* leave card – white, bottom-left */
-.card-leave {
+/* bottom waves */
+.hrms-wave {
   position: absolute;
-  bottom: 118px; left: 0;
-  background: #fff;
-  border-radius: 14px;
-  padding: 14px 18px;
-  display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 10px 32px rgba(0,0,0,0.22);
-  min-width: 190px;
+  bottom: 0; left: 0; width: 100%;
+  height: 220px;
+  pointer-events: none;
+  z-index: 1;
 }
-.leave-check-wrap {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: #dcfce7;
-  display: flex; align-items: center; justify-content: center;
-  color: #16a34a; font-size: 15px; flex-shrink: 0;
-}
-.leave-card-title { font-size: 13px; font-weight: 700; color: #111827; }
-.leave-card-sub   { font-size: 11px; color: #6b7280; margin-top: 1px; }
 
-/* attendance card – dark, bottom-center, slightly higher */
-.card-att {
+/* ══════════════════════════════════
+   LOGIN CARD  (absolutely positioned)
+   ══════════════════════════════════ */
+.hrms-card {
   position: absolute;
-  bottom: 128px; left: 220px; right: 24px;
-  background: #1e2d6a;
-  border-radius: 14px;
-  padding: 14px 18px;
-  box-shadow: 0 10px 32px rgba(0,0,0,0.3);
-}
-.att-label  { font-size: 11px; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
-.att-value  { font-size: 26px; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 8px; }
-.att-bar    { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; margin-bottom: 6px; }
-.att-fill   { height: 100%; background: linear-gradient(90deg,#34d399,#10b981); border-radius: 3px; }
-.att-sub    { font-size: 11px; color: rgba(255,255,255,0.4); }
-
-/* ═══════════════════════════════════════
-   RIGHT PANEL
-   ═══════════════════════════════════════ */
-.hrms-right {
-  flex: 1;
-  background: #eef0f6;
-  display: flex; align-items: center; justify-content: center;
-  padding: 32px 28px;
-}
-
-.hrms-form-card {
+  right: 90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 480px;
+  max-height: calc(100vh - 80px);
   background: #fff;
-  border-radius: 22px;
-  padding: 44px 40px 32px;
-  width: 100%; max-width: 450px;
-  box-shadow: 0 4px 40px rgba(0,0,0,0.09);
+  border-radius: 28px;
+  box-shadow: 0 40px 100px rgba(0,0,0,.4);
+  padding: 40px 56px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.hrms-card::-webkit-scrollbar { display: none; }
+
+/* form block */
+.hrms-form-block {
+  flex: 1;
 }
 
 /* welcome badge */
 .hrms-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: #fff8e6; border: 1px solid #fde68a;
-  color: #d97706; border-radius: 20px;
-  padding: 5px 14px; font-size: 12px; font-weight: 600;
-  margin-bottom: 14px;
+  display: inline-block;
+  background: #fef9c3; color: #854d0e;
+  border-radius: 99px; padding: 5px 12px;
+  font-size: 12px; font-weight: 700;
+  margin-bottom: 12px;
 }
-.hrms-sign-title { font-size: 30px; font-weight: 800; color: #111827; margin: 0 0 7px; letter-spacing: -0.3px; }
-.hrms-sign-sub   { font-size: 13.5px; color: #6b7280; margin: 0 0 28px; line-height: 1.5; }
+.hrms-sign-title {
+  font-size: 30px; font-weight: 800; color: #0f172a;
+  margin: 0 0 6px; letter-spacing: -0.3px;
+}
+.hrms-sign-sub {
+  font-size: 14px; color: #64748b; margin: 0;
+  line-height: 1.5;
+}
 
-/* labels */
-.hrms-form-card .form-label {
-  font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 7px; display: block;
+/* form labels */
+.hrms-card label.form-label,
+.hrms-card .form-label {
+  font-size: 13px; font-weight: 600; color: #334155;
+  margin: 16px 0 7px; display: block;
 }
-.hrms-form-card .form-group { margin-bottom: 18px; }
+.hrms-card .form-group { margin-bottom: 0; }
 
 /* inputs */
-.hrms-form-card .form-control {
-  width: 100%; height: 48px;
-  border-radius: 10px; border: 1.5px solid #e5e7eb;
-  font-size: 14px; padding: 0 44px 0 16px;
-  color: #111827; background: #fff;
-  transition: border-color .2s, box-shadow .2s; outline: none;
+.hrms-card .form-control {
+  width: 100%;
+  border-radius: 12px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  font-size: 15px !important;
+  padding: 14px 44px 14px 42px !important;
+  color: #0f172a !important;
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color .2s, box-shadow .2s, background .2s;
   -webkit-appearance: none;
+  height: auto !important;
 }
-.hrms-form-card .form-control:focus {
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+.hrms-card .form-control:focus {
+  border-color: #b45309 !important;
+  box-shadow: 0 0 0 4px rgba(234,179,8,.15) !important;
+  background: #fff !important;
 }
 
 /* remember + forgot row */
 .hrms-row {
   display: flex; justify-content: space-between; align-items: center;
-  margin: 4px 0 22px;
+  margin: 16px 0 0;
 }
 .hrms-row label {
   display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: #374151; cursor: pointer;
+  font-size: 14px; color: #475569; cursor: pointer; margin: 0;
 }
+
+/* custom checkbox */
 .hrms-row input[type=checkbox] {
-  width: 16px; height: 16px; accent-color: #1e3a8a; cursor: pointer; flex-shrink: 0;
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  background: #2563eb; /* default unchecked uses blue, checked uses navy */
+  cursor: pointer; flex-shrink: 0;
+  position: relative;
 }
-.hrms-row a { font-size: 13px; color: #f97316; font-weight: 600; text-decoration: none; }
+.hrms-row input[type=checkbox]::after {
+  content: "✓";
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #fff; font-weight: 700;
+  opacity: 0;
+}
+.hrms-row input[type=checkbox]:checked {
+  background: #0b1f4d;
+}
+.hrms-row input[type=checkbox]:checked::after {
+  opacity: 1;
+}
+.hrms-row a { font-size: 14px; color: #b45309; font-weight: 600; text-decoration: none; }
 .hrms-row a:hover { text-decoration: underline; }
 
 /* Sign In button */
-.hrms-btn-primary {
-  width: 100%; height: 50px;
-  background: #1e3a8a; color: #fff; border: none;
-  border-radius: 10px; font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: background .2s;
+.hrms-btn-primary,
+.hrms-btn-primary.btn-login,
+.hrms-btn-primary.btn-forgot,
+.hrms-btn-primary.btn-login-with-email-link {
+  width: 100% !important; margin-top: 20px;
+  padding: 15px !important; border-radius: 12px !important;
+  border: 0 !important;
+  font-size: 16px !important; font-weight: 700 !important; color: #fff !important;
+  background: linear-gradient(90deg, #0b1f4d, #1e3a8a) !important;
+  box-shadow: 0 10px 24px rgba(30,58,138,.3) !important;
+  cursor: pointer;
   display: flex; align-items: center; justify-content: center;
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif !important;
+  transition: opacity .2s;
 }
-.hrms-btn-primary:hover { background: #1e40af; }
+.hrms-btn-primary:hover { opacity: .9; }
 
 /* or divider */
 .hrms-or {
   display: flex; align-items: center; gap: 12px;
-  margin: 18px 0; color: #9ca3af; font-size: 12px;
+  color: #94a3b8; font-size: 13px; margin: 16px 0;
 }
 .hrms-or::before, .hrms-or::after {
-  content: ""; flex: 1; height: 1px; background: #f0f0f0;
+  content: ""; flex: 1; height: 1px; background: #e2e8f0;
 }
 
-/* email link button */
+/* Login with Email Link button */
 .hrms-btn-secondary {
-  width: 100%; height: 48px;
-  background: #fff; color: #374151;
-  border: 1.5px solid #e5e7eb; border-radius: 10px;
-  font-size: 14px; font-weight: 500; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  text-decoration: none; transition: border-color .2s;
+  width: 100% !important; padding: 13px !important;
+  border-radius: 12px !important; border: 1.5px solid #e2e8f0 !important;
+  background: #fff !important; font-size: 15px !important; font-weight: 600 !important;
+  color: #0f172a !important; cursor: pointer;
+  display: flex !important; align-items: center; justify-content: center; gap: 8px;
+  text-decoration: none !important;
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif !important;
+  transition: border-color .2s;
 }
-.hrms-btn-secondary:hover { border-color: #d1d5db; color: #111827; }
+.hrms-btn-secondary:hover { border-color: #d1d5db !important; }
 
-/* footer */
+/* card footer */
 .hrms-footer {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 24px; font-size: 11.5px; color: #9ca3af;
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 12px; color: #94a3b8;
+  flex-shrink: 0;
 }
-.hrms-footer a { color: #f97316; font-weight: 600; text-decoration: none; }
+.hrms-footer a { color: #b45309; font-weight: 600; text-decoration: none; }
 .hrms-footer a:hover { text-decoration: underline; }
 
-/* strip frappe defaults inside our card */
-.hrms-form-card .login-content.page-card {
+/* strip frappe defaults inside card */
+.hrms-card .login-content.page-card {
   box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important;
 }
-.hrms-form-card .page-card-body,
-.hrms-form-card .page-card-actions { padding: 0 !important; }
-.hrms-form-card .page-card-head,
-.hrms-form-card .forgot-password-message,
-.hrms-form-card .sign-up-message { display: none !important; }
-.hrms-form-card .login-error-banner { margin-bottom: 12px; }
+.hrms-card .page-card-body,
+.hrms-card .page-card-actions { padding: 0 !important; }
+.hrms-card .page-card-head,
+.hrms-card .forgot-password-message,
+.hrms-card .sign-up-message { display: none !important; }
+.hrms-card .login-error-banner { margin-bottom: 12px; }
 
-/* frappe section wrappers */
+/* frappe section wrappers pass-through */
 .for-login,
 .for-email-login,
 .for-signup,
 .for-forgot,
 .for-login-with-email-link { display: contents; }
 
-/* responsive */
-@media (max-width: 860px) {
-  .hrms-left { display: none; }
-  .hrms-right { padding: 20px 16px; }
-  .hrms-form-card { padding: 32px 24px 28px; }
+/* for-forgot / for-login-with-email-link: show headings */
+.for-forgot .page-card-head,
+.for-login-with-email-link .page-card-head { display: block !important; margin-bottom: 16px; }
+.for-forgot .page-card-head h4,
+.for-login-with-email-link .page-card-head h4 {
+  font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 4px;
+}
+
+/* ── responsive ── */
+
+
+/* compact at 992–1199px */
+@media (max-width: 1199px) and (min-width: 993px) {
+  .hrms-card { right: 32px; width: 420px; padding: 32px 40px; }
+  .hrms-hero h1 { font-size: 36px; }
+}
+
+/* tablet: card becomes centred, left panel hides most content */
+@media (max-width: 992px) {
+  html, body { overflow-y: auto !important; height: auto !important; }
+  .hrms-wrap { overflow-y: auto; height: auto; min-height: 100vh; }
+  .hrms-left {
+    position: relative; height: auto;
+    padding: 32px 32px 60px;
+  }
+  .hrms-hero, .hrms-features, .hrms-trust { display: none; }
+  .hrms-card {
+    position: relative; right: auto; top: auto; bottom: auto;
+    transform: none;
+    width: 100%; max-width: 480px; max-height: none;
+    margin: -32px auto 32px;
+    border-radius: 24px; padding: 36px 36px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .hrms-form-block { flex: none; }
+}
+
+/* mobile */
+@media (max-width: 576px) {
+  .hrms-left { padding: 24px 16px 48px; }
+  .hrms-card { max-width: 100%; border-radius: 20px; padding: 24px 24px; margin: -24px 16px 24px; width: calc(100% - 32px); }
+  .hrms-sign-title { font-size: 26px; }
 }
 </style>
 {% endblock %}
@@ -360,21 +437,12 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
 {%- endmacro %}
 
 {% block page_content %}
-<div class="hrms-split">
+<div class="hrms-wrap">
 
-  <!-- ═══ LEFT PANEL ═══ -->
+  <!-- ═══ FULL-SCREEN NAVY BACKGROUND ═══ -->
   <div class="hrms-left">
 
-    <!-- circle ring watermark -->
-    <div class="hrms-ring"></div>
-
-    <!-- bottom wave SVG -->
-    <svg class="hrms-wave" viewBox="0 0 800 110" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,60 C200,110 400,10 600,70 C700,95 760,55 800,70 L800,110 L0,110 Z" fill="rgba(255,255,255,0.045)"/>
-      <path d="M0,80 C150,40 350,100 550,60 C680,35 750,80 800,65 L800,110 L0,110 Z" fill="rgba(255,255,255,0.03)"/>
-    </svg>
-
-    <!-- logo -->
+    <!-- brand -->
     <div class="hrms-logo">
       <div class="hrms-logo-box">
         <img src="/assets/india_payroll/images/pratyin-logo.png" alt="Pratyin">
@@ -386,21 +454,21 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
     </div>
 
     <!-- hero -->
-    <div class="hrms-hero" style="position:relative;z-index:2;">
-      <h1>Your team's home<br>for <span class="accent">everything HR</span></h1>
+    <div class="hrms-hero">
+      <h1>Your team's home<br>for <em class="accent">everything HR</em></h1>
       <p>Apply leave, mark attendance, view payslips and stay connected with your organisation — all in one place.</p>
     </div>
 
-    <!-- feature buttons -->
-    <div class="hrms-features" style="position:relative;z-index:2;">
-      <div class="hrms-feat-btn"><span class="feat-icon att">🕐</span> Attendance</div>
-      <div class="hrms-feat-btn"><span class="feat-icon leave">🌿</span> Leave Management</div>
-      <div class="hrms-feat-btn"><span class="feat-icon pay">💰</span> Payroll &amp; Payslips</div>
-      <div class="hrms-feat-btn"><span class="feat-icon perf">⭐</span> Performance</div>
+    <!-- feature chips -->
+    <div class="hrms-features">
+      <div class="hrms-feat-btn"><span class="feat-icon">🕒</span> Attendance</div>
+      <div class="hrms-feat-btn"><span class="feat-icon">🌴</span> Leave Management</div>
+      <div class="hrms-feat-btn"><span class="feat-icon">💰</span> Payroll &amp; Payslips</div>
+      <div class="hrms-feat-btn"><span class="feat-icon">📈</span> Performance</div>
     </div>
 
     <!-- trust row -->
-    <div class="hrms-trust" style="position:relative;z-index:2;">
+    <div class="hrms-trust">
       <div class="avatar-stack">
         <span class="av-1">AK</span>
         <span class="av-2">PS</span>
@@ -414,32 +482,19 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
       </div>
     </div>
 
-    <!-- floating cards area (spacer + absolutely positioned cards) -->
-    <div class="hrms-cards-area">
-      <!-- Leave approved – white card, lower-left -->
-      <div class="card-leave">
-        <div class="leave-check-wrap">✓</div>
-        <div>
-          <div class="leave-card-title">Leave approved</div>
-          <div class="leave-card-sub">Priya · 2 days</div>
-        </div>
-      </div>
-      <!-- Today's attendance – dark card, slightly higher, right -->
-      <div class="card-att">
-        <div class="att-label">Today's attendance</div>
-        <div class="att-value">92%</div>
-        <div class="att-bar"><div class="att-fill" style="width:92%"></div></div>
-        <div class="att-sub">228 of 248 checked in</div>
-      </div>
-    </div>
+    <!-- bottom waves -->
+    <svg class="hrms-wave" viewBox="0 0 1600 150" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 80 Q400 0 800 70 T1600 50 V150 H0Z" fill="rgba(255,255,255,.10)"/>
+      <path d="M0 110 Q450 50 850 110 T1600 90 V150 H0Z" fill="rgba(255,255,255,.14)"/>
+    </svg>
 
   </div><!-- /.hrms-left -->
 
-  <!-- ═══ RIGHT PANEL ═══ -->
-  <div class="hrms-right">
-    <div class="hrms-form-card">
+  <!-- ═══ FLOATING LOGIN CARD ═══ -->
+  <div class="hrms-card">
 
-      <div class="hrms-badge">👋 Welcome back</div>
+    <div class="hrms-form-block">
+      <span class="hrms-badge">👋 Welcome back</span>
       <h2 class="hrms-sign-title">Sign in to your account</h2>
       <p class="hrms-sign-sub">Enter your credentials to access your HR workspace.</p>
 
@@ -462,7 +517,6 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
       </section>
       {% endif %}
 
-      <!-- or continue with + Login with Email Link (always visible) -->
       <div class="hrms-or">or continue with</div>
       <a href="#login-with-email-link" class="hrms-btn-secondary btn-login-option btn-login-with-email-link">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -495,7 +549,7 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
           <div class="signup-disabled-message">
             <span class="indicator gray">{{ _("Signup Disabled") }}</span>
             <p class="text-muted mt-1">{{ _("Signups have been disabled.") }}</p>
-            <a href="/" class="btn btn-primary btn-md">{{ _("Home") }}</a>
+            <a href="/" class="hrms-btn-primary" style="display:inline-flex;margin-top:12px;text-decoration:none;">{{ _("Home") }}</a>
           </div>
           {%- endif -%}
         </div>
@@ -523,11 +577,11 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
               </div>
             </div>
             <div class="page-card-actions">
-              <button class="hrms-btn-primary btn-signup btn-forgot" type="submit" disabled style="margin-top:4px;">{{ _("Send Link") }}</button>
+              <button class="hrms-btn-primary btn-signup btn-forgot" type="submit" disabled>{{ _("Send Link") }}</button>
             </div>
           </form>
           <div style="margin-top:16px;text-align:center;font-size:13px;">
-            <a href="#login" style="color:#f97316;text-decoration:none;font-weight:600;">{{ _("Back to sign in") }}</a>
+            <a href="#login" style="color:#b45309;text-decoration:none;font-weight:600;">{{ _("Back to sign in") }}</a>
           </div>
         </div>
       </section>
@@ -559,7 +613,7 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
             <div class="page-card-actions">
               <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
                 {{ _("Didn't receive the link?") }}
-                <a href="#" class="btn-resend-link" style="color:#f97316;font-weight:600;">{{ _("Resend") }}</a>
+                <a href="#" class="btn-resend-link" style="color:#b45309;font-weight:600;">{{ _("Resend") }}</a>
               </p>
               <button class="hrms-btn-primary btn-login btn-login-with-email-link" type="submit">{{ _("Send login link") }}</button>
               <a href="#login" class="hrms-btn-secondary btn-login-option" style="margin-top:10px;display:flex;">{{ _("Login with password") }}</a>
@@ -567,16 +621,16 @@ body { background: #eef0f6 !important; font-family: -apple-system, BlinkMacSyste
           </form>
         </div>
       </section>
+    </div><!-- /.hrms-form-block -->
 
-      <div class="hrms-footer">
-        <span>© 2026 Pratyin · All rights reserved</span>
-        <span>Need access? <a href="mailto:sp@pratyin.com">Contact HR Admin</a></span>
-      </div>
+    <div class="hrms-footer">
+      <span>© 2026 Pratyin · All rights reserved</span>
+      <span>Need access? <a href="mailto:sp@pratyin.com">Contact HR Admin</a></span>
+    </div>
 
-    </div><!-- /.hrms-form-card -->
-  </div><!-- /.hrms-right -->
+  </div><!-- /.hrms-card -->
 
-</div><!-- /.hrms-split -->
+</div><!-- /.hrms-wrap -->
 {% endblock %}
 
 {% block script %}
