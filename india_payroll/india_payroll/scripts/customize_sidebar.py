@@ -79,6 +79,7 @@ def hide_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 		doc.append("items", row)
 
 	doc.flags.ignore_links = True
+	doc.flags.ignore_validate = True
 	doc.save()
 	frappe.db.commit()
 
@@ -117,6 +118,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 		for item in source_items:
 			doc.append("items", item)
 		doc.flags.ignore_links = True
+		doc.flags.ignore_validate = True
 		doc.save()
 		frappe.db.commit()
 		print(f"Reset sidebar to the {len(source_items)} items in {file_path}")
@@ -150,6 +152,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 		restored.add(label)
 
 	doc.flags.ignore_links = True
+	doc.flags.ignore_validate = True
 	doc.save()
 	frappe.db.commit()
 
