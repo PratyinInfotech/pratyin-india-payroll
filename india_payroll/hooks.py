@@ -132,9 +132,12 @@ boot_session = ["india_payroll.india_payroll.boot.filter_hidden_workspaces"]
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
+# Hide the framework's "Guest" account from the User list for every user,
+# including Administrator (frappe exempts Administrator from its own rule).
+# See india_payroll/permissions.py for why this is display-only and safe.
+permission_query_conditions = {
+	"User": "india_payroll.permissions.user_query_conditions",
+}
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",

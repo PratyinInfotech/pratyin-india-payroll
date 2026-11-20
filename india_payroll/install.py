@@ -447,7 +447,14 @@ def after_install():
 
 
 def after_migrate():
+	from india_payroll.india_payroll.scripts.customize_sidebar import hide_desktop_icons
+
 	create_custom_fields(get_custom_fields())
+
+	# Desktop Icon rows are standard records, re-imported from each app's
+	# desktop_icon/ folder on every migrate, so `hidden` resets to the shipped
+	# value each time. Re-apply it here rather than in a deployment step.
+	hide_desktop_icons()
 
 
 def create_professional_tax_component():
