@@ -23,6 +23,20 @@ from frappe.modules.utils import create_directory_on_app_path
 # and Buying are deliberately left out of this default list since they're
 # used by optional HR features (asset return tracking, project-linked
 # expenses, training vendor selection) — pass them explicitly if unwanted.
+# Every frappe.db.commit() below carries `# nosemgrep` for
+# frappe-semgrep-rules' frappe-manual-commit rule. The rule guards against
+# manual commits inside request handlers, where they break the framework's
+# per-request transaction. Nothing here is a request handler: these are
+# one-shot maintenance entry points, run from `bench execute` or from
+# india_payroll's after_migrate hook.
+#
+# The commit is deliberate rather than incidental. after_migrate runs near the
+# end of a long migrate, and migrate rolls the whole transaction back if any
+# later step raises (frappe/migrate.py:57) -- which would silently undo these
+# sidebar/icon changes while leaving the rest of the migrate reported as done.
+# Each function here makes one self-contained, idempotent change, so
+# committing it immediately is safe and makes it durable on its own.
+
 DEFAULT_MODULES_TO_HIDE = [
 	"Stock",
 	"Manufacturing",
@@ -39,7 +53,157 @@ DEFAULT_MODULES_TO_HIDE = [
 	"Budget",
 	"Subcontracting",
 	"ERPNext Settings",
+	# Frappe core admin sections. These carry no HR/Payroll dependency either,
+	# but unlike the ERP modules above they are *administrator* tooling rather
+	# than dead weight — hidden to keep the demo sidebar clean, not because
+	# they're useless. Everything in them stays reachable via the awesomebar
+	# and by direct URL; only the sidebar entry goes away. Drop a label from
+	# this list (or call restore_modules with it) to bring the section back:
+	#   Printing  -> Print Format, Print Heading, Print Format Builder,
+	#                Print Settings  (needed to customise a payslip layout)
+	#   System    -> Error Log, Scheduled Job Log/Type, RQ Job/Worker, Health
+	#                Report, System Console, Recorder, Patch Log, View Log
+	#                (the diagnostics you reach for when the scheduler stalls
+	#                 or a payroll run fails)
+	#   Website   -> Website Settings, Web Page, Web Form, Portal Settings,
+	#                Website Theme, Website Script  (Website Settings is where
+	#                 app_name / app_logo live, i.e. the Pratyin branding)
+	"Printing",
+	"System",
+	"Website",
 ]
+
+
+# Desktop Icons to hide. Deliberately NOT the same list as
+# DEFAULT_MODULES_TO_HIDE above. That list governs the LEFT SIDEBAR, where a
+# lean HR-only module list is wanted. These icons are the /desk launcher grid
+# and the sidebar header's "Workspaces" submenu, which stay exactly as ERPNext
+# ships them apart from the entries below -- hiding a module from the sidebar
+# is not a reason to also strip it from the launcher. Add a label here only to
+# drop it from those two places as well.
+DEFAULT_ICONS_TO_HIDE = [
+	"ERPNext Settings",
+]
+
+
+# The sidebar header icon for the merged "Home" sidebar -- the square tile next
+# to the "Pratyin HRMS" subtitle.
+#
+# frappe resolves that tile in four steps (sidebar_header.js set_header_icon):
+# a shipped SVG for the sidebar's label, then the Desktop Icon's logo_url,
+# then a generated grey letter tile, and only then the configured app logo.
+# The first two look the icon up through a filter that skips hidden rows, and
+# erpnext ships this one hidden with no logo_url -- so both were skipped and
+# the tile fell through to the letter "H". The app logo branch never runs,
+# because it only applies when no Workspace Sidebar exists at all.
+#
+# Setting hidden=0 and logo_url makes step two resolve. Done here rather than
+# by editing erpnext's desktop_icon/home.json so the whole change lives in
+# this app: that file is re-imported from the erpnext fork on every migrate
+# (frappe/model/sync.py:120) and after_migrate runs afterwards
+# (frappe/migrate.py:200), so this wins either way.
+#
+# Note hidden=0 also puts a Home tile on the /desk launcher grid. The same
+# flag gates both, so the logo cannot be had without it.
+HOME_DESKTOP_ICON = "Home"
+HOME_ICON_LOGO_URL = "/assets/india_payroll/images/pratyin-logo.png"
+
+
+def set_home_icon_logo(logo_url: str | None = None, icon: str | None = None):
+	"""Point the Home sidebar header icon at this app's logo.
+
+	Called from india_payroll's after_migrate hook. Safe to re-run.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.set_home_icon_logo
+	"""
+	icon = icon or HOME_DESKTOP_ICON
+	url = logo_url or HOME_ICON_LOGO_URL
+
+	if not frappe.db.exists("Desktop Icon", icon):
+		print(f"No Desktop Icon {icon!r} -- nothing to do")
+		return
+
+	current = frappe.db.get_value("Desktop Icon", icon, ["hidden", "logo_url"], as_dict=True)
+	if current.hidden == 0 and current.logo_url == url:
+		print(f"Desktop Icon {icon!r} already points at {url}")
+		return
+
+	# db.set_value, not doc.save(): DesktopIcon.on_update() calls
+	# export_desktop_icon(), which under developer_mode rewrites the owning
+	# app's JSON on disk -- here that is the erpnext fork's working tree.
+	frappe.db.set_value("Desktop Icon", icon, {"hidden": 0, "logo_url": url}, update_modified=False)
+	frappe.db.commit()  # nosemgrep
+	frappe.cache.delete_key("desktop_icons")
+	frappe.cache.delete_key("bootinfo")
+	print(f"Desktop Icon {icon!r} -> hidden=0, logo_url={url}")
+
+
+def hide_desktop_icons(modules: list[str] | None = None):
+	"""Hide the matching Desktop Icon records.
+
+	This is a SEPARATE record type from what hide_modules() touches, and both
+	are needed to make a module actually disappear:
+
+	  hide_modules()       -> Workspace Sidebar "Home" -> the LEFT SIDEBAR only
+	  hide_desktop_icons() -> Desktop Icon rows        -> the /desk launcher
+	                          grid AND the sidebar header's "Workspaces" submenu
+
+	Both of those read Desktop Icon and filter on `hidden`
+	(frappe/desk/page/desktop/desktop.js:191 and
+	frappe/public/js/frappe/ui/sidebar/sidebar_header.js:172), so a section
+	removed from the sidebar alone still shows up in both places.
+
+	Called automatically from india_payroll's after_migrate hook, so it
+	re-applies on every `bench migrate` — necessary because Desktop Icon rows
+	are standard records re-imported from each app's desktop_icon/ folder on
+	every migrate (frappe/model/sync.py:120), which would otherwise reset
+	`hidden` back to the shipped value.
+
+	Uses frappe.db.set_value rather than doc.save() on purpose: DesktopIcon.
+	on_update() calls export_desktop_icon(), which under developer_mode
+	rewrites the owning app's JSON file on disk. For frappe- and hrms-owned
+	icons that would dirty a working tree pinned to a release tag.
+	"""
+	target = modules or DEFAULT_ICONS_TO_HIDE
+	hidden, missing = [], []
+
+	for label in target:
+		if not frappe.db.exists("Desktop Icon", label):
+			missing.append(label)
+			continue
+		if not frappe.db.get_value("Desktop Icon", label, "hidden"):
+			frappe.db.set_value("Desktop Icon", label, "hidden", 1, update_modified=False)
+			hidden.append(label)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.cache.delete_key("desktop_icons")
+	frappe.cache.delete_key("bootinfo")
+
+	print(f"Hid {len(hidden)} desktop icon(s): {', '.join(sorted(hidden)) or '(none, already hidden)'}")
+	if missing:
+		print(f"No Desktop Icon for: {', '.join(sorted(missing))}")
+
+
+def show_desktop_icons(modules: list[str] | None = None):
+	"""Undo hide_desktop_icons(). Note the after_migrate hook will hide them
+	again on the next migrate unless the label is also removed from
+	DEFAULT_ICONS_TO_HIDE.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.show_desktop_icons \\
+	        --kwargs "{'modules': ['System']}"
+	"""
+	target = modules or DEFAULT_ICONS_TO_HIDE
+	shown = []
+
+	for label in target:
+		if frappe.db.exists("Desktop Icon", label):
+			frappe.db.set_value("Desktop Icon", label, "hidden", 0, update_modified=False)
+			shown.append(label)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.cache.delete_key("desktop_icons")
+	frappe.cache.delete_key("bootinfo")
+	print(f"Unhid {len(shown)} desktop icon(s): {', '.join(sorted(shown)) or '(none)'}")
 
 
 def hide_modules(modules: list[str] | None = None, sidebar: str = "Home"):
@@ -81,8 +245,7 @@ def hide_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 	doc.flags.ignore_links = True
 	doc.flags.ignore_validate = True
 	doc.save()
-	frappe.db.commit()
-
+	frappe.db.commit()  # nosemgrep
 	print(f"Removed {len(removed)} module section(s): {', '.join(sorted(removed)) or '(none)'}")
 	missing = target - removed
 	if missing:
@@ -120,7 +283,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 		doc.flags.ignore_links = True
 		doc.flags.ignore_validate = True
 		doc.save()
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep
 		print(f"Reset sidebar to the {len(source_items)} items in {file_path}")
 		return
 
@@ -154,8 +317,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 	doc.flags.ignore_links = True
 	doc.flags.ignore_validate = True
 	doc.save()
-	frappe.db.commit()
-
+	frappe.db.commit()  # nosemgrep
 	print(f"Restored {len(restored)} module section(s): {', '.join(sorted(restored)) or '(none)'}")
 	already = target & existing_labels
 	if already:

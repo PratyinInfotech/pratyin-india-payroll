@@ -52,6 +52,20 @@
 	};
 })();
 
+// Sidebar header dropdown entries to drop entirely. These are hardcoded in
+// frappe's SidebarHeader constructor (not Desktop Icon rows and not Navbar
+// Settings), so no amount of hiding Desktop Icons or sidebar sections removes
+// them — see the block below for how they're suppressed.
+//
+//   website -> labelled "Website", sits just under "Workspaces". It does NOT
+//              open the Website *module*; it's window.open(location.origin),
+//              i.e. "view the public site". Hidden because this deployment's
+//              public routes are the login page and the HR portal only, so it
+//              dumps a desk user onto a page with nothing actionable on it.
+//
+// Removing a name here brings the entry straight back.
+const INDIA_PAYROLL_HIDDEN_HEADER_MENU_ITEMS = ["website"];
+
 // The sidebar header's "Desktop" menu item calls frappe.set_route("/desk"),
 // which — when triggered as an in-app SPA navigation (not a fresh page load)
 // — re-enters the already-instantiated Workspace page's own fallback
@@ -77,6 +91,21 @@
 						frappe.set_route("home");
 					};
 				}
+
+				// Suppress the hardcoded entries listed above. frappe.ui.menu's
+				// make() re-evaluates item.condition on every open (menu.js:47-63)
+				// and keeps a live reference to this same dropdown_items array, so
+				// overriding condition here — after super() has already built the
+				// menu — still takes effect. The separate inline renderer
+				// (populate_dropdown_menu -> add_app_item) ignores condition but
+				// does stamp data-name, so its node is removed directly.
+				INDIA_PAYROLL_HIDDEN_HEADER_MENU_ITEMS.forEach((name) => {
+					const item = this.dropdown_items.find((i) => i.name === name);
+					if (item) item.condition = () => false;
+					if (this.dropdown_menu) {
+						this.dropdown_menu.find(`[data-name="${name}"]`).remove();
+					}
+				});
 			} catch (e) {
 				console.error(e);
 			}
@@ -161,10 +190,17 @@
 		const $section_break = this.wrapper.find(".item-anchor.section-break");
 		if (!$section_break.length || $section_break.find(".sidebar-item-icon").length) return;
 
-		const icon_html = frappe.utils.icon(this.item.icon, "sm", "", "", "text-ink-gray-7 current-color", true);
-		$(`<span class="sidebar-item-icon" item-icon="${this.item.icon}">${icon_html}</span>`).prependTo(
-			$section_break
+		const icon_html = frappe.utils.icon(
+			this.item.icon,
+			"sm",
+			"",
+			"",
+			"text-ink-gray-7 current-color",
+			true
 		);
+		$(
+			`<span class="sidebar-item-icon" item-icon="${this.item.icon}">${icon_html}</span>`
+		).prependTo($section_break);
 	};
 })();
 
