@@ -23,6 +23,20 @@ from frappe.modules.utils import create_directory_on_app_path
 # and Buying are deliberately left out of this default list since they're
 # used by optional HR features (asset return tracking, project-linked
 # expenses, training vendor selection) — pass them explicitly if unwanted.
+# Every frappe.db.commit() below carries `# nosemgrep` for
+# frappe-semgrep-rules' frappe-manual-commit rule. The rule guards against
+# manual commits inside request handlers, where they break the framework's
+# per-request transaction. Nothing here is a request handler: these are
+# one-shot maintenance entry points, run from `bench execute` or from
+# india_payroll's after_migrate hook.
+#
+# The commit is deliberate rather than incidental. after_migrate runs near the
+# end of a long migrate, and migrate rolls the whole transaction back if any
+# later step raises (frappe/migrate.py:57) -- which would silently undo these
+# sidebar/icon changes while leaving the rest of the migrate reported as done.
+# Each function here makes one self-contained, idempotent change, so
+# committing it immediately is safe and makes it durable on its own.
+
 DEFAULT_MODULES_TO_HIDE = [
 	"Stock",
 	"Manufacturing",
@@ -118,7 +132,7 @@ def set_home_icon_logo(logo_url: str | None = None, icon: str | None = None):
 	# export_desktop_icon(), which under developer_mode rewrites the owning
 	# app's JSON on disk -- here that is the erpnext fork's working tree.
 	frappe.db.set_value("Desktop Icon", icon, {"hidden": 0, "logo_url": url}, update_modified=False)
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep
 	frappe.cache.delete_key("desktop_icons")
 	frappe.cache.delete_key("bootinfo")
 	print(f"Desktop Icon {icon!r} -> hidden=0, logo_url={url}")
@@ -161,7 +175,7 @@ def hide_desktop_icons(modules: list[str] | None = None):
 			frappe.db.set_value("Desktop Icon", label, "hidden", 1, update_modified=False)
 			hidden.append(label)
 
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep
 	frappe.cache.delete_key("desktop_icons")
 	frappe.cache.delete_key("bootinfo")
 
@@ -186,7 +200,7 @@ def show_desktop_icons(modules: list[str] | None = None):
 			frappe.db.set_value("Desktop Icon", label, "hidden", 0, update_modified=False)
 			shown.append(label)
 
-	frappe.db.commit()
+	frappe.db.commit()  # nosemgrep
 	frappe.cache.delete_key("desktop_icons")
 	frappe.cache.delete_key("bootinfo")
 	print(f"Unhid {len(shown)} desktop icon(s): {', '.join(sorted(shown)) or '(none)'}")
@@ -231,8 +245,7 @@ def hide_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 	doc.flags.ignore_links = True
 	doc.flags.ignore_validate = True
 	doc.save()
-	frappe.db.commit()
-
+	frappe.db.commit()  # nosemgrep
 	print(f"Removed {len(removed)} module section(s): {', '.join(sorted(removed)) or '(none)'}")
 	missing = target - removed
 	if missing:
@@ -270,7 +283,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 		doc.flags.ignore_links = True
 		doc.flags.ignore_validate = True
 		doc.save()
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep
 		print(f"Reset sidebar to the {len(source_items)} items in {file_path}")
 		return
 
@@ -304,8 +317,7 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 	doc.flags.ignore_links = True
 	doc.flags.ignore_validate = True
 	doc.save()
-	frappe.db.commit()
-
+	frappe.db.commit()  # nosemgrep
 	print(f"Restored {len(restored)} module section(s): {', '.join(sorted(restored)) or '(none)'}")
 	already = target & existing_labels
 	if already:
