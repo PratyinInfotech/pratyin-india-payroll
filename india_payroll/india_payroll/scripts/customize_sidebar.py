@@ -72,6 +72,60 @@ DEFAULT_ICONS_TO_HIDE = [
 ]
 
 
+# The sidebar header icon for the merged "Home" sidebar -- the square tile next
+# to the "Pratyin HRMS" subtitle.
+#
+# frappe resolves that tile in four steps (sidebar_header.js set_header_icon):
+# a shipped SVG for the sidebar's label, then the Desktop Icon's logo_url,
+# then a generated grey letter tile, and only then the configured app logo.
+# The first two look the icon up through a filter that skips hidden rows, and
+# erpnext ships this one hidden with no logo_url -- so both were skipped and
+# the tile fell through to the letter "H". The app logo branch never runs,
+# because it only applies when no Workspace Sidebar exists at all.
+#
+# Setting hidden=0 and logo_url makes step two resolve. Done here rather than
+# by editing erpnext's desktop_icon/home.json so the whole change lives in
+# this app: that file is re-imported from the erpnext fork on every migrate
+# (frappe/model/sync.py:120) and after_migrate runs afterwards
+# (frappe/migrate.py:200), so this wins either way.
+#
+# Note hidden=0 also puts a Home tile on the /desk launcher grid. The same
+# flag gates both, so the logo cannot be had without it.
+HOME_DESKTOP_ICON = "Home"
+HOME_ICON_LOGO_URL = "/assets/india_payroll/images/pratyin-logo.png"
+
+
+def set_home_icon_logo(logo_url: str | None = None, icon: str | None = None):
+	"""Point the Home sidebar header icon at this app's logo.
+
+	Called from india_payroll's after_migrate hook. Safe to re-run.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.set_home_icon_logo
+	"""
+	icon = icon or HOME_DESKTOP_ICON
+	url = logo_url or HOME_ICON_LOGO_URL
+
+	if not frappe.db.exists("Desktop Icon", icon):
+		print(f"No Desktop Icon {icon!r} -- nothing to do")
+		return
+
+	current = frappe.db.get_value("Desktop Icon", icon, ["hidden", "logo_url"], as_dict=True)
+	if current.hidden == 0 and current.logo_url == url:
+		print(f"Desktop Icon {icon!r} already points at {url}")
+		return
+
+	# db.set_value, not doc.save(): DesktopIcon.on_update() calls
+	# export_desktop_icon(), which under developer_mode rewrites the owning
+	# app's JSON on disk -- here that is the erpnext fork's working tree.
+	frappe.db.set_value(
+		"Desktop Icon", icon, {"hidden": 0, "logo_url": url}, update_modified=False
+	)
+	frappe.db.commit()
+	frappe.cache.delete_key("desktop_icons")
+	frappe.cache.delete_key("bootinfo")
+	print(f"Desktop Icon {icon!r} -> hidden=0, logo_url={url}")
+
+
 def hide_desktop_icons(modules: list[str] | None = None):
 	"""Hide the matching Desktop Icon records.
 
