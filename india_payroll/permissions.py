@@ -11,7 +11,7 @@ import frappe
 # This hook adds a second condition that has no such exemption.
 #
 # Frappe collects EVERY app's permission_query_conditions hook for a doctype
-# and joins them with " and " (frappe/model/db_query.py :: 
+# and joins them with " and " (frappe/model/db_query.py ::
 # get_permission_query_conditions), so this narrows frappe's own rule rather
 # than replacing it -- a non-Administrator still cannot see Administrator.
 #

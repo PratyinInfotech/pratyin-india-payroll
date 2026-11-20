@@ -117,9 +117,7 @@ def set_home_icon_logo(logo_url: str | None = None, icon: str | None = None):
 	# db.set_value, not doc.save(): DesktopIcon.on_update() calls
 	# export_desktop_icon(), which under developer_mode rewrites the owning
 	# app's JSON on disk -- here that is the erpnext fork's working tree.
-	frappe.db.set_value(
-		"Desktop Icon", icon, {"hidden": 0, "logo_url": url}, update_modified=False
-	)
+	frappe.db.set_value("Desktop Icon", icon, {"hidden": 0, "logo_url": url}, update_modified=False)
 	frappe.db.commit()
 	frappe.cache.delete_key("desktop_icons")
 	frappe.cache.delete_key("bootinfo")

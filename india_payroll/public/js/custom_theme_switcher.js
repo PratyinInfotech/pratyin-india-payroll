@@ -190,10 +190,17 @@ const INDIA_PAYROLL_HIDDEN_HEADER_MENU_ITEMS = ["website"];
 		const $section_break = this.wrapper.find(".item-anchor.section-break");
 		if (!$section_break.length || $section_break.find(".sidebar-item-icon").length) return;
 
-		const icon_html = frappe.utils.icon(this.item.icon, "sm", "", "", "text-ink-gray-7 current-color", true);
-		$(`<span class="sidebar-item-icon" item-icon="${this.item.icon}">${icon_html}</span>`).prependTo(
-			$section_break
+		const icon_html = frappe.utils.icon(
+			this.item.icon,
+			"sm",
+			"",
+			"",
+			"text-ink-gray-7 current-color",
+			true
 		);
+		$(
+			`<span class="sidebar-item-icon" item-icon="${this.item.icon}">${icon_html}</span>`
+		).prependTo($section_break);
 	};
 })();
 
