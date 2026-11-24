@@ -455,6 +455,8 @@ def after_install():
 def after_migrate():
 	from india_payroll.india_payroll.scripts.customize_sidebar import (
 		hide_desktop_icons,
+		hide_home_cards,
+		hide_workspaces,
 		set_home_icon_logo,
 	)
 	from india_payroll.india_payroll.scripts.pwa_branding import apply_brand_translations
@@ -473,6 +475,17 @@ def after_migrate():
 	# Same reason: erpnext ships the Home icon hidden and logo-less, and that
 	# file is re-imported on every migrate.
 	set_home_icon_logo()
+
+	# Third surface for the same problem: the /app/home landing page draws its
+	# "Reports & Masters" cards from the Home *Workspace*, not from the sidebar,
+	# so Stock and CRM kept their cards there after being dropped everywhere
+	# else. Workspace records are re-imported by sync_all() on every migrate
+	# too, hence here rather than a one-off deployment step.
+	hide_home_cards()
+
+	# And the workspaces themselves, so /app/stock and /app/crm stop being
+	# offered -- also what boot.filter_hidden_workspaces keys off.
+	hide_workspaces()
 
 
 def create_professional_tax_component():
