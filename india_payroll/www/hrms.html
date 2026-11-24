@@ -1,0 +1,347 @@
+{#-
+	Pratyin HR — mobile portal shell.
+
+	Shadows hrms/www/hrms.html (Frappe resolves www pages over
+	reversed(installed_apps), and india_payroll installs last) so the PWA
+	installs as "Pratyin HR" with Pratyin artwork instead of Frappe HR's.
+
+	Only the branded chrome lives here. The compiled Vue bundle is injected as
+	{{ hrms_asset_tags }}, read out of hrms's own template at render time by
+	www/hrms.py, so a `bench build --app hrms` re-hash never strands this page.
+	The mount points and boot payload below mirror hrms/www/hrms.html and must
+	stay in step with it.
+-#}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, viewport-fit=cover maximum-scale=1.0, user-scalable=no"
+		/>
+		<title>{{ brand_name }}</title>
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-title" content="{{ brand_name }}" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="theme-color" content="#0b1f4d" />
+
+		<!-- PWA -->
+		<link rel="manifest" href="/assets/india_payroll/manifest/manifest.webmanifest" />
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="196x196"
+			href="/assets/india_payroll/manifest/favicon-196.png"
+		/>
+		<link
+			rel="apple-touch-icon"
+			href="/assets/india_payroll/manifest/apple-icon-180.png"
+		/>
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+			rel="stylesheet"
+		/>
+
+		<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2048-2732.jpg"
+			media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2732-2048.jpg"
+			media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1668-2388.jpg"
+			media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2388-1668.jpg"
+			media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1536-2048.jpg"
+			media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2048-1536.jpg"
+			media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1668-2224.jpg"
+			media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2224-1668.jpg"
+			media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1620-2160.jpg"
+			media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2160-1620.jpg"
+			media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1290-2796.jpg"
+			media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2796-1290.jpg"
+			media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1179-2556.jpg"
+			media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2556-1179.jpg"
+			media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1284-2778.jpg"
+			media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2778-1284.jpg"
+			media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1170-2532.jpg"
+			media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2532-1170.jpg"
+			media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1125-2436.jpg"
+			media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2436-1125.jpg"
+			media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1242-2688.jpg"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2688-1242.jpg"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-828-1792.jpg"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1792-828.jpg"
+			media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1242-2208.jpg"
+			media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-2208-1242.jpg"
+			media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-750-1334.jpg"
+			media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1334-750.jpg"
+			media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-640-1136.jpg"
+			media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
+		/>
+			<link
+			rel="apple-touch-startup-image"
+			href="/assets/india_payroll/manifest/apple-splash-1136-640.jpg"
+			media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
+		/>
+
+		<style>
+			/* ──────────────────────────────────────────────────────────
+			   Pratyin brand layer.
+
+			   The portal's own stylesheet is a compiled Tailwind build that
+			   we deliberately do not fork, so the brand is applied on top.
+			   Everything that restyles screens is scoped to
+			   body.pratyin-login (set by the script below) — the signed-in
+			   app keeps hrms's stock look, which is what the header, lists
+			   and form views were designed against.
+			   ────────────────────────────────────────────────────────── */
+
+			:root {
+				--pratyin-navy: #0b1f4d;
+				--pratyin-navy-mid: #13306e;
+				--pratyin-navy-light: #1e3a8a;
+				--pratyin-gold: #eab308;
+			}
+
+			body,
+			#app {
+				font-family: Inter, "Segoe UI", system-ui, sans-serif;
+			}
+
+			/* ── sign-in screen, mirroring www/login.html ── */
+
+			body.pratyin-login ion-content {
+				--background: linear-gradient(
+					155deg,
+					var(--pratyin-navy) 0%,
+					var(--pratyin-navy-mid) 60%,
+					var(--pratyin-navy-light) 100%
+				);
+			}
+
+			/* The view paints itself white; let the navy through instead. */
+			body.pratyin-login .bg-white {
+				background-color: transparent !important;
+			}
+
+			/*
+			   The stock mark is an inline <svg viewBox="0 0 117 117"> with no
+			   class of its own (components/icons/FrappeHRLogo.vue). Its own
+			   children are hidden and the Pratyin logo is painted as a
+			   background, on the same white rounded card the web login uses —
+			   the source logo ships on an opaque white background, so it needs
+			   a white plate rather than being dropped straight onto navy.
+			*/
+			body.pratyin-login svg[viewBox="0 0 117 117"] {
+				width: 72px !important;
+				height: 72px !important;
+				background: #fff url("/assets/india_payroll/images/pratyin-logo.png") center / 78% no-repeat;
+				border-radius: 18px;
+				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+			}
+			body.pratyin-login svg[viewBox="0 0 117 117"] > * {
+				display: none;
+			}
+
+			body.pratyin-login .text-gray-900 {
+				color: #fff !important;
+			}
+			body.pratyin-login .text-gray-700,
+			body.pratyin-login .text-gray-600 {
+				color: rgba(255, 255, 255, 0.75) !important;
+			}
+			body.pratyin-login label {
+				color: rgba(255, 255, 255, 0.88) !important;
+				font-weight: 600;
+			}
+
+			body.pratyin-login input {
+				background-color: #fff !important;
+				color: #0f172a !important;
+				border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+				border-radius: 12px !important;
+				padding-top: 10px !important;
+				padding-bottom: 10px !important;
+				height: auto !important;
+			}
+			body.pratyin-login input:focus {
+				border-color: var(--pratyin-gold) !important;
+				box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.2) !important;
+			}
+
+			/* Primary action: navy-on-navy would vanish, so the brand's gold
+			   accent carries it instead. */
+			body.pratyin-login form button[type="submit"],
+			body.pratyin-login form button:not([type]) {
+				background: linear-gradient(90deg, var(--pratyin-gold), #f59e0b) !important;
+				color: var(--pratyin-navy) !important;
+				font-weight: 700 !important;
+				border-radius: 12px !important;
+				padding-top: 11px !important;
+				padding-bottom: 11px !important;
+				height: auto !important;
+				box-shadow: 0 10px 24px rgba(234, 179, 8, 0.25) !important;
+			}
+
+			body.pratyin-login a.text-sm {
+				color: #fcd34d !important;
+			}
+		</style>
+
+		<script>
+			/*
+			   Tag the sign-in screen so the brand layer above can target it
+			   without touching the rest of the app. Route-based rather than
+			   DOM-based: the Vue router owns this URL, and watching history is
+			   far cheaper than observing every mutation in the tree.
+			*/
+			(function () {
+				function sync() {
+					if (!document.body) return;
+					var onLogin = /\/hrms\/(login|forgot-password)\/?$/.test(location.pathname);
+					document.body.classList.toggle("pratyin-login", onLogin);
+				}
+
+				["pushState", "replaceState"].forEach(function (method) {
+					var original = history[method];
+					history[method] = function () {
+						var result = original.apply(this, arguments);
+						sync();
+						return result;
+					};
+				});
+
+				window.addEventListener("popstate", sync);
+				document.addEventListener("DOMContentLoaded", sync);
+				sync();
+			})();
+		</script>
+
+		{{ hrms_asset_tags }}
+	</head>
+	<body class="antialiased">
+		<div id="app"></div>
+		<div id="modals"></div>
+		<div id="popovers"></div>
+
+		<script>
+			window.csrf_token = "{{ csrf_token }}"
+			window.site_name = '{{ site_name }}'
+			if (!window.frappe) window.frappe = {}
+			frappe.boot = {{ boot }}
+		</script>
+	</body>
+</html>

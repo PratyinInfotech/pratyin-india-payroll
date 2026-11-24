@@ -1,0 +1,38 @@
+{
+	"name": "Pratyin HR",
+	"short_name": "Pratyin HR",
+	"description": "Everyday HR & payroll operations at your fingertips",
+	"lang": "en",
+	"start_url": "/hrms",
+	"scope": "/hrms",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#0b1f4d",
+	"theme_color": "#0b1f4d",
+	"icons": [
+		{
+			"src": "/assets/india_payroll/manifest/manifest-icon-192.maskable.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/assets/india_payroll/manifest/manifest-icon-192.maskable.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/assets/india_payroll/manifest/manifest-icon-512.maskable.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/assets/india_payroll/manifest/manifest-icon-512.maskable.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
