@@ -233,7 +233,7 @@
 			}
 
 			/* The view paints itself white; let the navy through instead. */
-			body.pratyin-login .bg-white {
+			body.pratyin-login ion-content .bg-white {
 				background-color: transparent !important;
 			}
 
@@ -245,30 +245,46 @@
 			   the source logo ships on an opaque white background, so it needs
 			   a white plate rather than being dropped straight onto navy.
 			*/
-			body.pratyin-login svg[viewBox="0 0 117 117"] {
+			body.pratyin-login ion-content svg[viewBox="0 0 117 117"] {
 				width: 72px !important;
 				height: 72px !important;
 				background: #fff url("/assets/india_payroll/images/pratyin-logo.png") center / 78% no-repeat;
 				border-radius: 18px;
 				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 			}
-			body.pratyin-login svg[viewBox="0 0 117 117"] > * {
+			body.pratyin-login ion-content svg[viewBox="0 0 117 117"] > * {
 				display: none;
 			}
 
-			body.pratyin-login .text-gray-900 {
+			/*
+			   Scoped to ion-content, i.e. the sign-in view itself. The install
+			   prompt's dialog and its iOS popover render OUTSIDE it, on their
+			   own light backgrounds — lightening their text would make the
+			   "Install Pratyin HR" heading unreadable.
+			*/
+			body.pratyin-login ion-content .text-gray-900 {
 				color: #fff !important;
 			}
-			body.pratyin-login .text-gray-700,
-			body.pratyin-login .text-gray-600 {
+			body.pratyin-login ion-content .text-gray-700,
+			body.pratyin-login ion-content .text-gray-600 {
 				color: rgba(255, 255, 255, 0.75) !important;
 			}
-			body.pratyin-login label {
+			body.pratyin-login ion-content label {
 				color: rgba(255, 255, 255, 0.88) !important;
 				font-weight: 600;
 			}
 
-			body.pratyin-login input {
+			/* Belt and braces: anything sitting on the popover's light blue
+			   panel keeps dark text no matter how it is nested. */
+			body.pratyin-login .bg-blue-100 .text-gray-900 {
+				color: #0f172a !important;
+			}
+			body.pratyin-login .bg-blue-100 .text-gray-800,
+			body.pratyin-login .bg-blue-100 .text-gray-700 {
+				color: #334155 !important;
+			}
+
+			body.pratyin-login ion-content input {
 				background-color: #fff !important;
 				color: #0f172a !important;
 				border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
@@ -277,15 +293,15 @@
 				padding-bottom: 10px !important;
 				height: auto !important;
 			}
-			body.pratyin-login input:focus {
+			body.pratyin-login ion-content input:focus {
 				border-color: var(--pratyin-gold) !important;
 				box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.2) !important;
 			}
 
 			/* Primary action: navy-on-navy would vanish, so the brand's gold
 			   accent carries it instead. */
-			body.pratyin-login form button[type="submit"],
-			body.pratyin-login form button:not([type]) {
+			body.pratyin-login ion-content form button[type="submit"],
+			body.pratyin-login ion-content form button:not([type]) {
 				background: linear-gradient(90deg, var(--pratyin-gold), #f59e0b) !important;
 				color: var(--pratyin-navy) !important;
 				font-weight: 700 !important;
@@ -296,7 +312,7 @@
 				box-shadow: 0 10px 24px rgba(234, 179, 8, 0.25) !important;
 			}
 
-			body.pratyin-login a.text-sm {
+			body.pratyin-login ion-content a.text-sm {
 				color: #fcd34d !important;
 			}
 		</style>
