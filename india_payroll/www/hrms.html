@@ -221,8 +221,34 @@
 				font-family: Inter, "Segoe UI", system-ui, sans-serif;
 			}
 
-			/* ── sign-in screen, mirroring www/login.html ── */
+			/* ── sign-in screen: the web login's design on the portal's own markup ──
+				www/login.html is a page we own, so it is laid out freely. Here the
+				markup belongs to hrms's compiled Vue bundle, so the same design is
+				reached by restyling what the bundle renders and carrying the card's
+				copy on pseudo-elements.
 
+				What the bundle gives us (hrms frontend, the sign-in route):
+
+					div.h-screen.bg-white          the view
+						div.gap-3.items-center         logo + heading
+						div.mx-auto.mt-10              form wrapper
+							form
+								label   (Email)
+								label   (Password)
+								button  (Login)
+								div > a (Forgot Password?)
+
+				Read as: navy ground, brand lockup on top, white card below — which is
+				how www/login.html collapses at phone width. Every rule is scoped to
+				body.pratyin-login ion-content, so the signed-in app and the install
+				prompt (both outside ion-content) keep hrms's stock look.
+
+				This leans on the bundle's Tailwind class names. If an hrms update
+				renames them the login falls back to the stock layout on the navy
+				ground — it loses the skin, it does not break.
+			*/
+
+			/* ── navy ground, with the gold ring from the web page's left panel ── */
 			body.pratyin-login ion-content {
 				--background: linear-gradient(
 					155deg,
@@ -232,94 +258,299 @@
 				);
 			}
 
-			/* The view paints itself white; let the navy through instead. */
 			body.pratyin-login ion-content .bg-white {
 				background-color: transparent !important;
+				height: auto !important;
+				min-height: 100% !important;
+				justify-content: flex-start !important;
+				padding: 44px 0 40px !important;
+			}
+
+
+
+			/* ── brand lockup: logo beside the wordmark ── */
+			body.pratyin-login ion-content .gap-3.items-center {
+				flex-direction: row !important;
+				align-items: center !important;
+				justify-content: flex-start !important;
+				gap: 14px !important;
+				width: 100%;
+				max-width: 24rem;
+				padding: 0 6px;
 			}
 
 			/*
-			   The stock mark is an inline <svg viewBox="0 0 117 117"> with no
-			   class of its own (components/icons/FrappeHRLogo.vue). Its own
-			   children are hidden and the Pratyin logo is painted as a
-			   background, on the same white rounded card the web login uses —
-			   the source logo ships on an opaque white background, so it needs
-			   a white plate rather than being dropped straight onto navy.
+				The stock mark is an inline <svg viewBox="0 0 117 117"> with no class of
+				its own. Its children are hidden and the Pratyin logo is painted as a
+				background on the white rounded plate the web header uses — the source
+				logo ships on an opaque white background, so it needs that plate rather
+				than being dropped straight onto navy.
 			*/
 			body.pratyin-login ion-content svg[viewBox="0 0 117 117"] {
-				width: 72px !important;
-				height: 72px !important;
+				width: 58px !important;
+				height: 58px !important;
+				flex: none;
 				background: #fff url("/assets/india_payroll/images/pratyin-logo.png") center / 78% no-repeat;
-				border-radius: 18px;
-				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+				border-radius: 14px;
+				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
 			}
+
 			body.pratyin-login ion-content svg[viewBox="0 0 117 117"] > * {
 				display: none;
 			}
 
 			/*
-			   Scoped to ion-content, i.e. the sign-in view itself. The install
-			   prompt's dialog and its iOS popover render OUTSIDE it, on their
-			   own light backgrounds — lightening their text would make the
-			   "Install Pratyin HR" heading unreadable.
+				The heading renders the translated "Login to Pratyin HR". The web header
+				carries a two-line lockup instead, so the text is collapsed and the two
+				lines are set as pseudo-elements.
 			*/
+			body.pratyin-login ion-content .text-3xl {
+				display: flex !important;
+				flex-direction: column;
+				align-items: flex-start;
+				font-size: 0 !important;
+				line-height: 1.2 !important;
+				text-align: left !important;
+			}
+
+			body.pratyin-login ion-content .text-3xl::before {
+				content: "Pratyin HRMS";
+				font-size: 20px;
+				font-weight: 700;
+				color: #fff;
+			}
+
+			body.pratyin-login ion-content .text-3xl::after {
+				content: "Human Resource Management";
+				font-size: 12px;
+				font-weight: 500;
+				color: rgba(255, 255, 255, 0.75);
+				margin-top: 2px;
+			}
+
+			/* ── the white card ── */
+			body.pratyin-login ion-content .mt-10 {
+				max-width: 24rem;
+				margin-top: 26px !important;
+				padding: 26px 22px 24px !important;
+				background: #fff;
+				border-radius: 28px;
+				box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+			}
+
+			body.pratyin-login ion-content .mt-10::before {
+				content: "\01F44B  Welcome back";
+				display: inline-block;
+				margin-bottom: 12px;
+				padding: 5px 12px;
+				border-radius: 99px;
+				background: #fef9c3;
+				color: #854d0e;
+				font-size: 12px;
+				font-weight: 700;
+			}
+
+			body.pratyin-login ion-content form::before {
+				content: "Sign in to your account";
+				font-size: 24px;
+				font-weight: 800;
+				color: #0f172a;
+				letter-spacing: -0.3px;
+			}
+
+			/* The subtitle rides on the first field's label so that it sits inside the
+				card's flow, between the heading and the Email label. */
+			body.pratyin-login ion-content form > label:nth-of-type(1)::before {
+				content: "Enter your credentials to access your HR workspace.";
+				display: block;
+				margin: 2px 0 18px;
+				color: #64748b;
+				font-size: 13.5px;
+				font-weight: 400;
+				line-height: 1.5;
+			}
+
+			/* ── fields ── */
+			body.pratyin-login ion-content form label span {
+				color: #334155 !important;
+				font-size: 13px !important;
+				font-weight: 600 !important;
+			}
+
+			body.pratyin-login ion-content input {
+				width: 100%;
+				height: auto !important;
+				padding: 13px 14px 13px 42px !important;
+				border: 1.5px solid #e2e8f0 !important;
+				border-radius: 12px !important;
+				background: #f8fafc !important;
+				color: #0f172a !important;
+				font-size: 15px !important;
+				box-shadow: none !important;
+				-webkit-appearance: none;
+				transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+			}
+
+			body.pratyin-login ion-content input::placeholder {
+				color: #94a3b8 !important;
+			}
+
+			body.pratyin-login ion-content input:focus {
+				border-color: #b45309 !important;
+				background: #fff !important;
+				box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.15) !important;
+			}
+
+			/* Field icons, matching the web page's envelope and lock. */
+			body.pratyin-login ion-content form > label .relative::before {
+				content: "";
+				position: absolute;
+				left: 14px;
+				top: 50%;
+				width: 16px;
+				height: 16px;
+				transform: translateY(-50%);
+				background-repeat: no-repeat;
+				background-size: 16px 16px;
+				opacity: 0.5;
+				pointer-events: none;
+				z-index: 2;
+			}
+
+			body.pratyin-login ion-content form > label:nth-of-type(1) .relative::before {
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath d='m2 7 10 6 10-6'/%3E%3C/svg%3E");
+			}
+
+			body.pratyin-login ion-content form > label:nth-of-type(2) .relative::before {
+				background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='10' width='16' height='11' rx='2'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E");
+			}
+
+			/* ── primary action: the web page's navy gradient ── */
+			body.pratyin-login ion-content form button {
+				height: auto !important;
+				margin-top: 20px !important;
+				padding: 14px !important;
+				border-radius: 12px !important;
+				background: linear-gradient(90deg, var(--pratyin-navy), var(--pratyin-navy-light)) !important;
+				color: #fff !important;
+				font-size: 15px !important;
+				font-weight: 700 !important;
+				box-shadow: 0 14px 30px rgba(11, 31, 77, 0.3) !important;
+			}
+
+			body.pratyin-login ion-content form button span {
+				color: #fff !important;
+				font-weight: 700 !important;
+			}
+
+			body.pratyin-login ion-content form button span::after {
+				content: "  \2192";
+			}
+
+			body.pratyin-login ion-content form a {
+				color: #b45309 !important;
+				font-size: 13.5px !important;
+				font-weight: 600 !important;
+				text-decoration: none !important;
+			}
+
+			/* The brand lockup sits on navy; everything else now sits on the card. */
 			body.pratyin-login ion-content .text-gray-900 {
 				color: #fff !important;
 			}
-			body.pratyin-login ion-content .text-gray-700,
-			body.pratyin-login ion-content .text-gray-600 {
-				color: rgba(255, 255, 255, 0.75) !important;
-			}
-			body.pratyin-login ion-content label {
-				color: rgba(255, 255, 255, 0.88) !important;
-				font-weight: 600;
-			}
 
-			/* Belt and braces: anything sitting on the popover's light blue
-			   panel keeps dark text no matter how it is nested. */
+			/*
+				Belt and braces: the install prompt's dialog and its iOS popover render
+				OUTSIDE ion-content, on their own light blue panel. Pin dark text there
+				so the "Install Pratyin HR" heading stays readable however it nests.
+			*/
 			body.pratyin-login .bg-blue-100 .text-gray-900 {
 				color: #0f172a !important;
 			}
+
 			body.pratyin-login .bg-blue-100 .text-gray-800,
 			body.pratyin-login .bg-blue-100 .text-gray-700 {
 				color: #334155 !important;
 			}
 
-			body.pratyin-login ion-content input {
-				background-color: #fff !important;
-				color: #0f172a !important;
-				border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
-				border-radius: 12px !important;
-				padding-top: 10px !important;
-				padding-bottom: 10px !important;
-				height: auto !important;
-			}
-			body.pratyin-login ion-content input:focus {
-				border-color: var(--pratyin-gold) !important;
-				box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.2) !important;
+			/* ── reset-password screen ────────────────────────────────────────────
+				A different view from the sign-in route: a sticky header, a scrolling
+				body and a sticky footer button, each on its own full-bleed white
+				panel. The card treatment above does not apply, so it gets the navy
+				ground with the whole panel floated as one rounded card — branded,
+				and with hrms's own dark-on-white text left alone.
+			*/
+			body.pratyin-forgot ion-content {
+				--background: linear-gradient(
+					155deg,
+					var(--pratyin-navy) 0%,
+					var(--pratyin-navy-mid) 60%,
+					var(--pratyin-navy-light) 100%
+				);
 			}
 
-			/* Primary action: navy-on-navy would vanish, so the brand's gold
-			   accent carries it instead. */
-			body.pratyin-login ion-content form button[type="submit"],
-			body.pratyin-login ion-content form button:not([type]) {
-				background: linear-gradient(90deg, var(--pratyin-gold), #f59e0b) !important;
-				color: var(--pratyin-navy) !important;
+			body.pratyin-forgot ion-content > div > .bg-white {
+				width: auto !important;
+				height: auto !important;
+				max-height: calc(100% - 44px);
+				margin: 22px 14px;
+				border-radius: 24px;
+				overflow: hidden;
+				box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+			}
+
+			body.pratyin-forgot ion-content header {
+				box-shadow: none !important;
+				border-bottom: 1px solid #eef2f7;
+			}
+
+			body.pratyin-forgot ion-content button.w-full {
+				border-radius: 12px !important;
+				background: linear-gradient(90deg, var(--pratyin-navy), var(--pratyin-navy-light)) !important;
+				color: #fff !important;
 				font-weight: 700 !important;
-				border-radius: 12px !important;
-				padding-top: 11px !important;
-				padding-bottom: 11px !important;
-				height: auto !important;
-				box-shadow: 0 10px 24px rgba(234, 179, 8, 0.25) !important;
+				box-shadow: 0 14px 30px rgba(11, 31, 77, 0.3) !important;
 			}
 
-			body.pratyin-login ion-content a.text-sm {
-				color: #fcd34d !important;
+			body.pratyin-forgot ion-content button.w-full span {
+				color: #fff !important;
+				font-weight: 700 !important;
+			}
+
+			/* The field styling is shared with the sign-in card, minus the icon. */
+			body.pratyin-forgot ion-content input {
+				width: 100%;
+				height: auto !important;
+				padding: 13px 14px !important;
+				border: 1.5px solid #e2e8f0 !important;
+				border-radius: 12px !important;
+				background: #f8fafc !important;
+				color: #0f172a !important;
+				font-size: 15px !important;
+				box-shadow: none !important;
+				-webkit-appearance: none;
+			}
+
+			body.pratyin-forgot ion-content input:focus {
+				border-color: #b45309 !important;
+				background: #fff !important;
+				box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.15) !important;
+			}
+
+			/* The install prompt renders on both signed-out screens. */
+			body.pratyin-forgot .bg-blue-100 .text-gray-900 {
+				color: #0f172a !important;
+			}
+
+			body.pratyin-forgot .bg-blue-100 .text-gray-800,
+			body.pratyin-forgot .bg-blue-100 .text-gray-700 {
+				color: #334155 !important;
 			}
 		</style>
 
 		<script>
 			/*
-			   Tag the sign-in screen so the brand layer above can target it
+			   Tag each signed-out screen so the brand layer above can target it
 			   without touching the rest of the app. Route-based rather than
 			   DOM-based: the Vue router owns this URL, and watching history is
 			   far cheaper than observing every mutation in the tree.
@@ -327,8 +558,12 @@
 			(function () {
 				function sync() {
 					if (!document.body) return;
-					var onLogin = /\/hrms\/(login|forgot-password)\/?$/.test(location.pathname);
-					document.body.classList.toggle("pratyin-login", onLogin);
+					var path = location.pathname;
+					document.body.classList.toggle("pratyin-login", /\/hrms\/login\/?$/.test(path));
+					document.body.classList.toggle(
+						"pratyin-forgot",
+						/\/hrms\/forgot-password\/?$/.test(path)
+					);
 				}
 
 				["pushState", "replaceState"].forEach(function (method) {
