@@ -432,6 +432,7 @@ def get_custom_fields():
 
 
 def after_install():
+	from india_payroll.india_payroll.scripts.pwa_branding import apply_brand_translations
 	from india_payroll.patches.v1_0.set_employment_state_from_company_address import execute
 
 	create_custom_fields(get_custom_fields())
@@ -442,6 +443,11 @@ def after_install():
 	create_income_tax_slabs()
 	setup_tax_exemption_categories()
 
+	# Renames "Frappe HR" to "Pratyin HR" inside the /hrms mobile app, whose
+	# strings are compiled into hrms's Vue bundle and can only be retargeted
+	# through translations. See scripts/pwa_branding.py.
+	apply_brand_translations()
+
 	# setup employment states
 	execute()
 
@@ -449,10 +455,17 @@ def after_install():
 def after_migrate():
 	from india_payroll.india_payroll.scripts.customize_sidebar import (
 		hide_desktop_icons,
+		hide_home_cards,
+		hide_workspaces,
 		set_home_icon_logo,
 	)
+	from india_payroll.india_payroll.scripts.pwa_branding import apply_brand_translations
 
 	create_custom_fields(get_custom_fields())
+
+	# Re-asserted on every migrate so a restored or freshly migrated site keeps
+	# the mobile app branded as Pratyin HR. Idempotent.
+	apply_brand_translations()
 
 	# Desktop Icon rows are standard records, re-imported from each app's
 	# desktop_icon/ folder on every migrate, so `hidden` resets to the shipped
@@ -462,6 +475,17 @@ def after_migrate():
 	# Same reason: erpnext ships the Home icon hidden and logo-less, and that
 	# file is re-imported on every migrate.
 	set_home_icon_logo()
+
+	# Third surface for the same problem: the /app/home landing page draws its
+	# "Reports & Masters" cards from the Home *Workspace*, not from the sidebar,
+	# so Stock and CRM kept their cards there after being dropped everywhere
+	# else. Workspace records are re-imported by sync_all() on every migrate
+	# too, hence here rather than a one-off deployment step.
+	hide_home_cards()
+
+	# And the workspaces themselves, so /app/stock and /app/crm stop being
+	# offered -- also what boot.filter_hidden_workspaces keys off.
+	hide_workspaces()
 
 
 def create_professional_tax_component():

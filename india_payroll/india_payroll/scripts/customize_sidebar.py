@@ -2,7 +2,7 @@ import json
 import os
 
 import frappe
-from frappe.modules.utils import create_directory_on_app_path
+from frappe.modules.utils import create_directory_on_app_path, get_doc_path
 
 # IMPORTANT — developer_mode caveat, verified by testing on a dev bench:
 # WorkspaceSidebar.export_sidebar() re-writes this app's own home.json file
@@ -83,6 +83,14 @@ DEFAULT_MODULES_TO_HIDE = [
 # drop it from those two places as well.
 DEFAULT_ICONS_TO_HIDE = [
 	"ERPNext Settings",
+	# Stock and CRM are hidden everywhere else in this deployment (sidebar via
+	# DEFAULT_MODULES_TO_HIDE, landing-page cards via DEFAULT_HOME_CARDS_TO_HIDE,
+	# the workspaces themselves via DEFAULT_WORKSPACES_TO_HIDE), so leaving them
+	# on the launcher grid and in the "Workspaces" submenu would be the one place
+	# they still showed. erpnext already ships the CRM icon hidden; Stock's is
+	# visible, so this is what actually removes it.
+	"Stock",
+	"CRM",
 ]
 
 
@@ -325,3 +333,199 @@ def restore_modules(modules: list[str] | None = None, sidebar: str = "Home"):
 	missing = target - restored - existing_labels
 	if missing:
 		print(f"Not found in {file_path}: {', '.join(sorted(missing))}")
+
+
+# -- Workspace landing page ---------------------------------------------------
+# A THIRD surface, separate from both of the above. /app/home renders the
+# "Home" **Workspace** (erpnext's, module "Setup"), and its `content` JSON lays
+# out the "Reports & Masters" link cards: Accounting, Stock, CRM, Data Import
+# and Settings. Those cards are built from the Workspace's own `links` table,
+# not from the Workspace Sidebar, so a module dropped by hide_modules() still
+# has its card sitting on the landing page. Verified on this bench: Stock and
+# CRM were gone from the sidebar and still rendered as cards on /app/home.
+#
+# Hiding a card takes both halves:
+#   * the `card` block removed from Workspace.content  -> the card stops being
+#     laid out on the page at all
+#   * hidden=1 on its Card Break row and the Link rows nested under it -> the
+#     links stop being offered anywhere else that reads the links table, e.g.
+#     the workspace editor's "add a card" picker
+#
+# Everything below uses frappe.db.set_value rather than doc.save(), for a
+# sharper version of the reason given for the Desktop Icon helpers:
+# Workspace.on_update() calls export_to_files() for any *public* workspace
+# whenever developer_mode is on (frappe/desk/doctype/workspace/workspace.py:119)
+# -- and this workspace belongs to erpnext, so a save here would rewrite
+# erpnext/setup/workspace/home/home.json inside the erpnext fork's working
+# tree. Staying off doc.save() keeps that file pristine, which also leaves it
+# usable as the source of truth for show_home_cards() below.
+#
+# Re-applied from the after_migrate hook: `workspace` folders are part of what
+# frappe.model.sync.sync_all() re-imports on every migrate
+# (frappe/model/sync.py:19-41), so an erpnext upgrade that touches home.json
+# would otherwise bring both cards back.
+DEFAULT_HOME_CARDS_TO_HIDE = [
+	"Stock",
+	"CRM",
+]
+
+
+# The workspaces themselves. Marking them is_hidden=1 is what keeps /app/stock
+# and /app/crm out of workspace lists, and it is also what india_payroll's
+# boot_session hook keys off to strip a module from the merged Home sidebar for
+# every user including Administrator (see india_payroll/boot.py). Without it a
+# Workspace Manager still sees both modules offered in the workspace switcher.
+DEFAULT_WORKSPACES_TO_HIDE = [
+	"Stock",
+	"CRM",
+]
+
+
+def _card_name(block: dict) -> str | None:
+	"""The card a `content` block renders, or None if it is not a card block."""
+	if block.get("type") != "card":
+		return None
+	return (block.get("data") or {}).get("card_name")
+
+
+def hide_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
+	"""Drop link cards from a Workspace landing page. Idempotent.
+
+	Usage:
+	    # hide the default list (see DEFAULT_HOME_CARDS_TO_HIDE above)
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.hide_home_cards
+
+	    # or a deployment-specific list / a different workspace
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.hide_home_cards \\
+	        --kwargs "{'cards': ['Stock'], 'workspace': 'Home'}"
+	"""
+	target = set(cards or DEFAULT_HOME_CARDS_TO_HIDE)
+	doc = frappe.get_doc("Workspace", workspace)
+
+	# 1. the layout
+	blocks = json.loads(doc.content or "[]")
+	kept = [b for b in blocks if _card_name(b) not in target]
+	dropped = {_card_name(b) for b in blocks if _card_name(b) in target}
+
+	if kept != blocks:
+		frappe.db.set_value("Workspace", workspace, "content", json.dumps(kept), update_modified=False)
+
+	# 2. the links. A card is a Card Break row followed by its Link rows, until
+	# the next Card Break -- the same flat-list-with-headers shape hide_modules()
+	# walks for the sidebar.
+	in_target_card = False
+	hidden_rows = 0
+	for row in doc.links:
+		if row.type == "Card Break":
+			in_target_card = row.label in target
+		if not in_target_card or row.hidden:
+			continue
+		frappe.db.set_value("Workspace Link", row.name, "hidden", 1, update_modified=False)
+		hidden_rows += 1
+
+	frappe.db.commit()  # nosemgrep
+	frappe.clear_document_cache("Workspace", workspace)
+	frappe.cache.delete_key("bootinfo")
+
+	print(
+		f"{workspace}: removed {len(dropped)} card(s) "
+		f"({', '.join(sorted(dropped)) or 'none, already removed'}) "
+		f"and hid {hidden_rows} link row(s)"
+	)
+	missing = target - dropped
+	if missing:
+		print(f"Not laid out on {workspace} (already removed, or label mismatch?): {', '.join(sorted(missing))}")
+
+
+def show_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
+	"""Undo hide_home_cards(). Note the after_migrate hook will hide them again
+	on the next migrate unless the label is also removed from
+	DEFAULT_HOME_CARDS_TO_HIDE.
+
+	The card's original position in the layout is recovered from the owning app's
+	shipped workspace JSON -- the source of truth, left pristine because
+	hide_home_cards() never calls doc.save(). Cards that are hidden but not named
+	here stay hidden.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.show_home_cards \\
+	        --kwargs "{'cards': ['Stock']}"
+	"""
+	target = set(cards or DEFAULT_HOME_CARDS_TO_HIDE)
+	doc = frappe.get_doc("Workspace", workspace)
+
+	file_path = os.path.join(
+		get_doc_path(doc.module, "Workspace", doc.name), f"{frappe.scrub(doc.name)}.json"
+	)
+	with open(file_path) as f:
+		source_blocks = json.loads(json.load(f).get("content") or "[]")
+
+	current = json.loads(doc.content or "[]")
+	present = {_card_name(b) for b in current} - {None}
+	still_hidden = {_card_name(b) for b in source_blocks} - {None} - present - target
+
+	restored_content = [b for b in source_blocks if _card_name(b) not in still_hidden]
+	restored = {_card_name(b) for b in source_blocks if _card_name(b) in target}
+
+	frappe.db.set_value(
+		"Workspace", workspace, "content", json.dumps(restored_content), update_modified=False
+	)
+
+	in_target_card = False
+	for row in doc.links:
+		if row.type == "Card Break":
+			in_target_card = row.label in target
+		if not in_target_card or not row.hidden:
+			continue
+		frappe.db.set_value("Workspace Link", row.name, "hidden", 0, update_modified=False)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.clear_document_cache("Workspace", workspace)
+	frappe.cache.delete_key("bootinfo")
+	print(f"{workspace}: restored {len(restored)} card(s): {', '.join(sorted(restored)) or '(none)'}")
+
+
+def hide_workspaces(workspaces: list[str] | None = None):
+	"""Mark whole workspaces hidden, so /app/<name> stops being offered.
+
+	Called from after_migrate -- `is_hidden` lives in the Workspace record, which
+	sync_all() re-imports from the owning app's workspace/ folder on every
+	migrate, so it has to be re-asserted there rather than set once by hand.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.hide_workspaces \\
+	        --kwargs "{'workspaces': ['Stock', 'CRM']}"
+	"""
+	target = workspaces or DEFAULT_WORKSPACES_TO_HIDE
+	hidden, missing = [], []
+
+	for name in target:
+		if not frappe.db.exists("Workspace", name):
+			missing.append(name)
+			continue
+		if not frappe.db.get_value("Workspace", name, "is_hidden"):
+			frappe.db.set_value("Workspace", name, "is_hidden", 1, update_modified=False)
+			hidden.append(name)
+		frappe.clear_document_cache("Workspace", name)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.cache.delete_key("bootinfo")
+	print(f"Hid {len(hidden)} workspace(s): {', '.join(sorted(hidden)) or '(none, already hidden)'}")
+	if missing:
+		print(f"No Workspace named: {', '.join(sorted(missing))}")
+
+
+def show_workspaces(workspaces: list[str] | None = None):
+	"""Undo hide_workspaces(). The after_migrate hook will hide them again on the
+	next migrate unless the label is also removed from DEFAULT_WORKSPACES_TO_HIDE.
+	"""
+	target = workspaces or DEFAULT_WORKSPACES_TO_HIDE
+	shown = []
+
+	for name in target:
+		if frappe.db.exists("Workspace", name):
+			frappe.db.set_value("Workspace", name, "is_hidden", 0, update_modified=False)
+			frappe.clear_document_cache("Workspace", name)
+			shown.append(name)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.cache.delete_key("bootinfo")
+	print(f"Unhid {len(shown)} workspace(s): {', '.join(sorted(shown)) or '(none)'}")
