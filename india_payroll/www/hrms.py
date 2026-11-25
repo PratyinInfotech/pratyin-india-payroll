@@ -59,13 +59,16 @@ def get_hrms_asset_tags() -> str:
 	template_path = os.path.join(frappe.get_app_path("hrms"), "www", "hrms.html")
 
 	try:
-		with open(template_path, encoding="utf-8") as template:
+		# frappe-security-file-traversal fires on any open() call -- the rule is a
+		# bare `pattern: open(...)` with no taint analysis. template_path is built
+		# entirely from constants (get_app_path plus two literals) and never from
+		# request data, so there is no traversal to audit.
+		with open(template_path, encoding="utf-8") as template:  # nosemgrep
 			source = template.read()
 	except OSError as exc:
 		frappe.throw(
 			frappe._(
-				"Could not read {0}. Frappe HR's frontend has not been built — "
-				"run `bench build --app hrms`."
+				"Could not read {0}. Frappe HR's frontend has not been built — run `bench build --app hrms`."
 			).format(template_path),
 			exc=exc,
 		)
@@ -78,9 +81,9 @@ def get_hrms_asset_tags() -> str:
 
 	if not tags:
 		frappe.throw(
-			frappe._(
-				"No compiled frontend assets found in {0}. Run `bench build --app hrms`."
-			).format(template_path)
+			frappe._("No compiled frontend assets found in {0}. Run `bench build --app hrms`.").format(
+				template_path
+			)
 		)
 
 	return "\n\t\t".join(tags)

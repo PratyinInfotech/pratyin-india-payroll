@@ -434,7 +434,9 @@ def hide_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
 	)
 	missing = target - dropped
 	if missing:
-		print(f"Not laid out on {workspace} (already removed, or label mismatch?): {', '.join(sorted(missing))}")
+		print(
+			f"Not laid out on {workspace} (already removed, or label mismatch?): {', '.join(sorted(missing))}"
+		)
 
 
 def show_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
@@ -529,3 +531,87 @@ def show_workspaces(workspaces: list[str] | None = None):
 	frappe.db.commit()  # nosemgrep
 	frappe.cache.delete_key("bootinfo")
 	print(f"Unhid {len(shown)} workspace(s): {', '.join(sorted(shown)) or '(none)'}")
+
+
+# ── Help menu ────────────────────────────────────────────────────────────────
+# Items in the sidebar header's Help menu come from the Navbar Settings single,
+# whose help_dropdown rows are seeded from each app's `standard_help_items`
+# hook. frappe ships a "Frappe Support" row pointing at frappe.io/support --
+# a support channel Pratyin customers have no account for.
+#
+# Unlike Desktop Icon and Workspace rows, these survive a migrate: sync_table()
+# in frappe/core/doctype/navbar_settings only *appends* labels it does not
+# already find, so an edited row is left alone. This is still called from
+# after_migrate so a fresh install and a restored site end up in the same
+# state.
+DEFAULT_HELP_ITEMS_TO_HIDE = [
+	"Frappe Support",
+]
+
+
+def hide_help_items(items: list[str] | None = None):
+	"""Hide rows in Navbar Settings' Help menu by label.
+
+	`hidden` is read by SidebarHeader.get_help_siblings(), which skips the row
+	before it is ever rendered, so this removes the entry rather than just
+	hiding it with CSS.
+
+	    bench --site <site> execute india_payroll.india_payroll.scripts.customize_sidebar.hide_help_items \
+	        --kwargs "{'items': ['Frappe Support']}"
+	"""
+	target = items or DEFAULT_HELP_ITEMS_TO_HIDE
+	hidden, missing = [], []
+
+	for label in target:
+		rows = frappe.get_all(
+			"Navbar Item",
+			filters={
+				"parent": "Navbar Settings",
+				"parenttype": "Navbar Settings",
+				"parentfield": "help_dropdown",
+				"item_label": label,
+			},
+			pluck="name",
+		)
+		if not rows:
+			missing.append(label)
+			continue
+		for name in rows:
+			if not frappe.db.get_value("Navbar Item", name, "hidden"):
+				frappe.db.set_value("Navbar Item", name, "hidden", 1, update_modified=False)
+				hidden.append(label)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.clear_document_cache("Navbar Settings", "Navbar Settings")
+	frappe.cache.delete_key("bootinfo")
+	print(f"Hid {len(hidden)} help item(s): {', '.join(sorted(hidden)) or '(none, already hidden)'}")
+	if missing:
+		print(f"No Help menu item named: {', '.join(sorted(missing))}")
+
+
+def show_help_items(items: list[str] | None = None):
+	"""Undo hide_help_items(). The after_migrate hook will hide them again on the
+	next migrate unless the label is also removed from DEFAULT_HELP_ITEMS_TO_HIDE.
+	"""
+	target = items or DEFAULT_HELP_ITEMS_TO_HIDE
+	shown = []
+
+	for label in target:
+		rows = frappe.get_all(
+			"Navbar Item",
+			filters={
+				"parent": "Navbar Settings",
+				"parenttype": "Navbar Settings",
+				"parentfield": "help_dropdown",
+				"item_label": label,
+			},
+			pluck="name",
+		)
+		for name in rows:
+			frappe.db.set_value("Navbar Item", name, "hidden", 0, update_modified=False)
+			shown.append(label)
+
+	frappe.db.commit()  # nosemgrep
+	frappe.clear_document_cache("Navbar Settings", "Navbar Settings")
+	frappe.cache.delete_key("bootinfo")
+	print(f"Unhid {len(shown)} help item(s): {', '.join(sorted(shown)) or '(none)'}")

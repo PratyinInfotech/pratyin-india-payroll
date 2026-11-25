@@ -352,3 +352,33 @@
 .modal-body .theme-grid {
 	grid-template-columns: repeat(4, minmax(0, 1fr));
 }
+
+/* About dialog — see public/js/about_override.js, which replaces frappe's
+   dialog body with a logo and the product name. Theme-independent: the
+   dialog is the same on every theme. */
+.pratyin-about-body {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding: 28px 16px 32px;
+	text-align: center;
+}
+
+.pratyin-about-logo {
+	width: 72px;
+	height: 72px;
+	object-fit: contain;
+	border-radius: 14px;
+	/* The logo ships on an opaque white background, so it needs a white plate
+	   of its own to not sit on a grey card in dark mode. */
+	background: #fff;
+	padding: 6px;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.pratyin-about-name {
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--text-color, #1f272e);
+}
