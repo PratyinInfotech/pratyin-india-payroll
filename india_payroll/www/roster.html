@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+	Pratyin HR — roster planner shell.
+
+	Shadows hrms/www/roster.html so /hr/... carries Pratyin branding instead of
+	Frappe HR's. See www/roster.py for why the compiled asset tags are lifted
+	from hrms's own template rather than copied.
+-->
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" href="/assets/india_payroll/images/pratyin-favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Roster · {{ brand_name }}</title>
+		{{ roster_asset_tags }}
+
+		<style>
+			/* ──────────────────────────────────────────────────────────
+			   Pratyin brand layer.
+
+			   The planner's stylesheet is a compiled Tailwind build that we
+			   deliberately do not fork, so the brand is applied on top.
+
+			   Only the navbar lockup is restyled. Everything else — the
+			   month grid, filters, dialogs — keeps hrms's stock look, which
+			   is what those screens were designed against.
+			   ────────────────────────────────────────────────────────── */
+
+			body,
+			#app {
+				font-family: Inter, "Segoe UI", system-ui, sans-serif;
+			}
+
+			/*
+				NavBar.vue renders the lockup as:
+
+					<a href="/desk/hr-setup" class="... flex items-center">
+						<svg viewBox="0 0 117 117" class="h-6 w-6 mr-2.5">  the mark
+						Frappe HR                                          a bare text node
+					</a>
+
+				"Frappe HR" is a literal in the template, not a __() call, so the
+				Translation rows that rebrand the mobile portal cannot reach it. The
+				text node has no element of its own either, so it is collapsed with
+				font-size: 0 on the anchor and the wordmark is set as a pseudo-element.
+				The mark keeps its size through all of this because h-6/w-6 are rem.
+
+				Scoped to this exact href so nothing else on the page is touched. If an
+				hrms update changes that route the navbar falls back to the stock
+				lockup — it loses the brand, it does not break.
+			*/
+			a[href="/desk/hr-setup"] {
+				font-size: 0 !important;
+			}
+
+			a[href="/desk/hr-setup"]::after {
+				content: "{{ brand_name }}";
+				font-size: 14px;
+				font-weight: 500;
+				line-height: 1.5;
+				white-space: nowrap;
+			}
+
+			/*
+				The stock mark is an inline <svg viewBox="0 0 117 117"> with no class of
+				its own beyond sizing. Its children are hidden and the Pratyin logo is
+				painted as a background instead. The source logo ships on an opaque
+				white background, which matches the navbar's own white ground, so it
+				needs no plate here (unlike the navy sign-in screen in www/hrms.html).
+			*/
+			a[href="/desk/hr-setup"] svg[viewBox="0 0 117 117"] {
+				background: url("/assets/india_payroll/images/pratyin-logo.png") center /
+					contain no-repeat;
+				border-radius: 4px;
+			}
+
+			a[href="/desk/hr-setup"] svg[viewBox="0 0 117 117"] > * {
+				display: none;
+			}
+		</style>
+	</head>
+	<body class="text-gray-800">
+		<div id="app"></div>
+		<div id="modals"></div>
+		<div id="popovers"></div>
+
+		<script>
+			window.csrf_token = "{{ csrf_token }}";
+		</script>
+	</body>
+</html>
