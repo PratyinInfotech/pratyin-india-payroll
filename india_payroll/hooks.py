@@ -28,7 +28,12 @@ required_apps = ["frappe/hrms"]
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/india_payroll/css/custom_theme.css"
-app_include_js = "/assets/india_payroll/js/custom_theme_switcher.js"
+app_include_js = [
+	"/assets/india_payroll/js/custom_theme_switcher.js",
+	# Replaces frappe's About dialog with a Pratyin one. Must load after the
+	# desk bundle, which app_include_js guarantees.
+	"/assets/india_payroll/js/about_override.js",
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/india_payroll/css/india_payroll.css"

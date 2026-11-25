@@ -455,6 +455,7 @@ def after_install():
 def after_migrate():
 	from india_payroll.india_payroll.scripts.customize_sidebar import (
 		hide_desktop_icons,
+		hide_help_items,
 		hide_home_cards,
 		hide_workspaces,
 		set_home_icon_logo,
@@ -482,6 +483,12 @@ def after_migrate():
 	# else. Workspace records are re-imported by sync_all() on every migrate
 	# too, hence here rather than a one-off deployment step.
 	hide_home_cards()
+
+	# frappe seeds a "Frappe Support" row into Navbar Settings' Help menu that
+	# points at frappe.io/support. Unlike the records above it is not re-imported
+	# on migrate, but this is re-asserted anyway so a fresh install and a
+	# restored site agree. Idempotent.
+	hide_help_items()
 
 	# And the workspaces themselves, so /app/stock and /app/crm stop being
 	# offered -- also what boot.filter_hidden_workspaces keys off.
