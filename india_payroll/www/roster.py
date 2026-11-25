@@ -79,9 +79,9 @@ def get_roster_asset_tags() -> str:
 
 	if not tags:
 		frappe.throw(
-			frappe._(
-				"No compiled roster assets found in {0}. Run `bench build --app hrms`."
-			).format(template_path)
+			frappe._("No compiled roster assets found in {0}. Run `bench build --app hrms`.").format(
+				template_path
+			)
 		)
 
 	return "\n\t\t".join(tags)

@@ -93,7 +93,7 @@ def navy_gradient(width: int, height: int) -> Image.Image:
 		else:
 			blend = (position - 0.6) / 0.4
 			start, end = NAVY_MID, NAVY_LIGHT
-		painter.point((0, y), tuple(round(a + (b - a) * blend) for a, b in zip(start, end)))
+		painter.point((0, y), tuple(round(a + (b - a) * blend) for a, b in zip(start, end, strict=True)))
 
 	# 155deg in CSS runs top-left to bottom-right; a mild rotation of the
 	# vertical ramp reproduces that diagonal without per-pixel maths.

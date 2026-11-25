@@ -434,7 +434,9 @@ def hide_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
 	)
 	missing = target - dropped
 	if missing:
-		print(f"Not laid out on {workspace} (already removed, or label mismatch?): {', '.join(sorted(missing))}")
+		print(
+			f"Not laid out on {workspace} (already removed, or label mismatch?): {', '.join(sorted(missing))}"
+		)
 
 
 def show_home_cards(cards: list[str] | None = None, workspace: str = "Home"):
