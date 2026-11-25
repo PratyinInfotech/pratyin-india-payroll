@@ -60,7 +60,11 @@ def get_roster_asset_tags() -> str:
 	template_path = os.path.join(frappe.get_app_path("hrms"), "www", "roster.html")
 
 	try:
-		with open(template_path, encoding="utf-8") as template:
+		# frappe-security-file-traversal fires on any open() call -- the rule is a
+		# bare `pattern: open(...)` with no taint analysis. template_path is built
+		# entirely from constants (get_app_path plus two literals) and never from
+		# request data, so there is no traversal to audit.
+		with open(template_path, encoding="utf-8") as template:  # nosemgrep
 			source = template.read()
 	except OSError as exc:
 		frappe.throw(
